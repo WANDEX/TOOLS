@@ -2,15 +2,21 @@
 # -*- coding: utf-8 -*-
 """Main module."""
 import codecs
+from os import path
 
 
-file = input("file name in current directory: ")
+file = input("file name in current directory or full path to file with extension: \n")
+
+assert path.exists(file), "THE PROVIDED FILE OR DIRECTORY DOES NOT EXIST AT,\n" + str(file)
+
 if (file.isspace() or file == ""):
-    raise ValueError("A FILE WAS NOT PROVIDED")
+    raise ValueError("PROPER FILE NAME WAS NOT PROVIDED")
 
 output = input("output name: ")
+
 if (output.isspace() or output == ""):
-    output = "new_" + str(file)
+    pair = path.splitext(file)
+    output = pair[0] + "_new" + pair[1]
 
 encoding = input("encoding, by default is 'UTF-8': ") or "utf-8"
 
