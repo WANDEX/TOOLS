@@ -1,27 +1,42 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Main module."""
-import codecs
 from os import path
+import re
 
+file = ""
 
-file = input("file name in current directory or full path to file with extension: \n")
+while (not path.exists(file)):
+    print("ENTER VALID FILE IN CURRENT DIRECTORY OR FULL PATH WITH EXTENSION\n[" + str(file) + "]")
+    file = input("file: ")
 
-assert path.exists(file), "THE PROVIDED FILE OR DIRECTORY DOES NOT EXIST AT,\n" + str(file)
-
-if (file.isspace() or file == ""):
-    raise ValueError("PROPER FILE NAME WAS NOT PROVIDED")
-
-output = input("output name: ")
+output = input("output(if empty '  + _new'): ")
 
 if (output.isspace() or output == ""):
     pair = path.splitext(file)
     output = pair[0] + "_new" + pair[1]
 
-encoding = input("encoding, by default is 'UTF-8': ") or "utf-8"
+encoding = input("encoding(if empty 'UTF-8'): ") or "utf-8"
 
 print(str(file + " " + output + " " + encoding))
 
-with codecs.open(file, 'r', encoding, errors='replace') as f_in, codecs.open(output, 'w', encoding) as f_out:
+
+def reorder_method():
+    irmethod = input("reorder method('strict'/'...'): ")
+    return(irmethod)
+
+
+def strict(f_in, f_out):
     f_out.writelines(reversed(f_in.readlines()))
-    print("SUCCESS")
+    print("SUCCESS STRICT REORDER COMPLETE")
+
+
+def reorder():
+    with open(file, 'r', 1, encoding, errors='replace') as f_in, open(output, 'w', 1, encoding) as f_out:
+        if reorder_method() == "strict":
+            strict(f_in, f_out)
+        else:
+            pass
+
+
+reorder()
