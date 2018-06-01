@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Main module."""
 from os import path
-import re
+# import re
 
 file = ""
 
@@ -33,22 +33,24 @@ def strict(f_in, f_out):
 
 def blocks(f_in, f_out):
     blocks_list = []
+    source_list = []
+    line_index = 0
 
     # all_lines = ""
     for line in f_in:
-        # blocks_list.insert(0, line)
-        # if not empty_line: # empty line
-            # blocks_list.append(line)
-            # block_of_lines = ""
-        empty_line = not line.strip()
-        # blocks_list.reverse()
-        blocks_list.append(line)
+        source_list.append(line)
+
+    for lines in source_list:
+        empty_line = not lines.strip()
 
         if empty_line:
-            blocks_list.reverse()
-            pass
-            # blocks_list.reverse()
-                # line = ""
+            line_index = 0
+            blocks_list.insert(line_index, lines)
+
+        elif not empty_line:
+            blocks_list.insert(line_index, lines)
+
+        line_index += 1
     # all_lines = f_in.readlines()
 
     f_out.writelines(blocks_list)
