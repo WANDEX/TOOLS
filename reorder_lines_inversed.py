@@ -39,7 +39,6 @@ def blocks(f_in, f_out):
     delimiter = emptyline
 
     for line in f_in:
-<<<<<<< HEAD
         line_counter += 1
         if line == delimiter:
             line_index = 0
@@ -48,14 +47,6 @@ def blocks(f_in, f_out):
             blocks_list.insert(line_index, line)
         else:
             print("SOMETHING HAPPENED AT LINE: {0}\n, STRING CONTENT: {1}".format(str(line_counter), str(line)))
-=======
-        empty_line = not line.strip()
-        if empty_line:
-            line_index = 0
-            blocks_list.insert(line_index, line)
-        elif not empty_line:
-            blocks_list.insert(line_index, line)
->>>>>>> 410598ef0d16d1b2f4555a3bc86b99079cce6174
         line_index += 1
 
     f_out.writelines(blocks_list)
