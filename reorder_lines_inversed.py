@@ -34,14 +34,19 @@ def strict(f_in, f_out):
 def blocks(f_in, f_out):
     blocks_list = []
     line_index = 0
+    line_counter = 0
+    emptyline = "\n"
+    delimiter = emptyline
 
     for line in f_in:
-        empty_line = not line.strip()
-        if empty_line:
+        line_counter += 1
+        if line == delimiter:
             line_index = 0
             blocks_list.insert(line_index, line)
-        elif not empty_line:
+        elif line != delimiter:
             blocks_list.insert(line_index, line)
+        else:
+            print("SOMETHING HAPPENED AT LINE: {0}\n, STRING CONTENT: {1}".format(str(line_counter), str(line)))
         line_index += 1
 
     f_out.writelines(blocks_list)
