@@ -33,25 +33,16 @@ def strict(f_in, f_out):
 
 def blocks(f_in, f_out):
     blocks_list = []
-    source_list = []
     line_index = 0
 
-    # all_lines = ""
     for line in f_in:
-        source_list.append(line)
-
-    for lines in source_list:
-        empty_line = not lines.strip()
-
+        empty_line = not line.strip()
         if empty_line:
             line_index = 0
-            blocks_list.insert(line_index, lines)
-
+            blocks_list.insert(line_index, line)
         elif not empty_line:
-            blocks_list.insert(line_index, lines)
-
+            blocks_list.insert(line_index, line)
         line_index += 1
-    # all_lines = f_in.readlines()
 
     f_out.writelines(blocks_list)
     print("SUCCESS BLOCKS REORDER COMPLETE")
