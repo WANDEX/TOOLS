@@ -36,6 +36,7 @@ def blocks(f_in, f_out):
     line_index = 0
     line_counter = 0
     emptyline = "\n"
+    custom_delimiter = "$\n"
     delimiter = emptyline
 
     for line in f_in:
