@@ -2,33 +2,34 @@
 # -*- coding: utf-8 -*-
 """Main module."""
 from os import path
-# import re
-
-file = ""
-
-while (not path.exists(file)):
-    print("ENTER VALID FILE IN CURRENT DIRECTORY OR FULL PATH WITH EXTENSION\n[" + str(file) + "]")
-    file = input("file: ")
-
-output = input("output(if empty '  + _new'): ")
-
-if (output.isspace() or output == ""):
-    pair = path.splitext(file)
-    output = pair[0] + "_new" + pair[1]
-
-encoding = input("encoding(if empty 'UTF-8'): ") or "utf-8"
-
-print(str(file + " " + output + " " + encoding))
 
 
-def reorder_method():
-    irmethod = input("reorder method('strict'/'blocks'/'...'): ")
-    return(irmethod)
+def ifile():
+    file = ""
+
+    while (not path.exists(file)):
+        print("ENTER VALID FILE IN CURRENT DIRECTORY OR FULL PATH WITH EXTENSION\n[" + str(file) + "]")
+        file = input("file: ")
+    return(file)
 
 
-def strict(f_in, f_out):
-    f_out.writelines(reversed(f_in.readlines()))
-    print("SUCCESS STRICT REORDER COMPLETE")
+<<<<<<< HEAD
+<<<<<<< HEAD
+def ioutput():
+    file = ifile()
+    output = input("output(if empty '  + _new'): ")
+
+    if (output.isspace() or output == ""):
+        pair = path.splitext(file)
+        output = pair[0] + "_new" + pair[1]
+    return(output)
+
+
+def iencoding():
+    encoding = input("encoding(if empty 'UTF-8'): ").lower() or "utf-8"
+    return(encoding)
+=======
+encoding = input("encoding(if empty 'UTF-8'): ").lower() or "utf-8"
 
 
 def idelimiter():
@@ -37,6 +38,35 @@ def idelimiter():
     return delimiter + emptyline
 
 
+def reorder_method():
+    irmethod = input("reorder method('strict'/'blocks'/'...'): ").lower()
+    return(irmethod)
+>>>>>>> 8f5bae84772357584e8895b131bf57c14adb31e3
+
+=======
+encoding = input("encoding(if empty 'UTF-8'): ").lower() or "utf-8"
+
+>>>>>>> 8f5bae84772357584e8895b131bf57c14adb31e3
+
+<<<<<<< HEAD
+def idelimiter():
+    emptyline = "\n"
+    delimiter = input("delimiter(if 'empty line' - nothing): ")
+    return delimiter + emptyline
+
+
+def reorder_method():
+    irmethod = input("reorder method('strict'/'blocks'/'...'): ").lower()
+    return(irmethod)
+
+
+def strict(f_in, f_out):
+    f_out.writelines(reversed(f_in.readlines()))
+    print("SUCCESS STRICT REORDER COMPLETE")
+
+
+=======
+>>>>>>> 8f5bae84772357584e8895b131bf57c14adb31e3
 def blocks(f_in, f_out):
     blocks_list = []
     line_index = 0
@@ -59,11 +89,26 @@ def blocks(f_in, f_out):
 
 
 def reorder():
+<<<<<<< HEAD
+<<<<<<< HEAD
+    encoding = iencoding()
+    file = ifile()
+    output = ioutput()
+=======
+    # print(str(file + " " + output + " " + encoding + " " + idelimiter(). + " " + reorder_method()))
+>>>>>>> 8f5bae84772357584e8895b131bf57c14adb31e3
+=======
+    # print(str(file + " " + output + " " + encoding + " " + idelimiter(). + " " + reorder_method()))
+>>>>>>> 8f5bae84772357584e8895b131bf57c14adb31e3
     with open(file, 'r', 1, encoding, errors='replace') as f_in, open(output, 'w', 1, encoding) as f_out:
-        if reorder_method() == "strict":
+        rmethod = reorder_method()
+        if rmethod == "strict":
             strict(f_in, f_out)
-        else:
+        elif rmethod == "blocks":
             blocks(f_in, f_out)
+        else:
+            print("THERE'S NO SUCH METHOD, TYPE IN ONE OF THE FOLLOWING.")
+            reorder()
 
 
 reorder()
