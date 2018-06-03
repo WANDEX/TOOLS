@@ -31,13 +31,17 @@ def strict(f_in, f_out):
     print("SUCCESS STRICT REORDER COMPLETE")
 
 
+def idelimiter():
+    emptyline = "\n"
+    delimiter = input("delimiter(if 'empty line' - nothing): ")
+    return delimiter + emptyline
+
+
 def blocks(f_in, f_out):
     blocks_list = []
     line_index = 0
     line_counter = 0
-    emptyline = "\n"
-    custom_delimiter = "$\n"
-    delimiter = emptyline
+    delimiter = idelimiter()
 
     for line in f_in:
         line_counter += 1
