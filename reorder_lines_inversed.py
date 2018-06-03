@@ -56,7 +56,6 @@ def blocks(f_in, f_out):
 
 
 def reorder():
-    # print(str(file + " " + output + " " + encoding + " " + idelimiter(). + " " + reorder_method()))
     with open(file, 'r', 1, encoding, errors='replace') as f_in, open(output, 'w', 1, encoding) as f_out:
         rmethod = reorder_method()
         if rmethod == "strict":
