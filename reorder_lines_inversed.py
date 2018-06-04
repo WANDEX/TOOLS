@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Main module."""
-from os import path
+import os
 
 file = ""
 
-while (not path.exists(file)):
-    print("ENTER VALID FILE IN CURRENT DIRECTORY OR FULL PATH WITH EXTENSION\n[" + str(file) + "]")
-    file = input("file: ")
+while (not os.path.exists(file)):
+    if file.endswith != (".txt"):  # WRONG CHECK
+        current_dir = os.getcwd()
+        file = file + current_dir
+        print(file)
+    else:
+        print("ENTER VALID FILE IN CURRENT DIRECTORY OR FULL PATH WITH EXTENSION\n[" + str(file) + "]")
+        file = input("file: ")
+        print(file)
 
 output = input("output(if empty '  + _new'): ")
 
 if (output.isspace() or output == ""):
-    pair = path.splitext(file)
+    pair = os.path.splitext(file)
     output = pair[0] + "_new" + pair[1]
 
 encoding = input("encoding(if empty 'UTF-8'): ").lower() or "utf-8"
