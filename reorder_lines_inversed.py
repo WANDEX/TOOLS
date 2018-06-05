@@ -6,14 +6,12 @@ import os
 file = ""
 
 while (not os.path.exists(file)):
-    if file.endswith != (".txt"):  # WRONG CHECK
+    print("ENTER VALID RELATIVE FILE PATH OR FULL PATH WITH EXTENSION\n[" + str(file) + "]")
+    file = input("file: ")
+    if file.startswith("\\"):
         current_dir = os.getcwd()
-        file = file + current_dir
-        print(file)
-    else:
-        print("ENTER VALID FILE IN CURRENT DIRECTORY OR FULL PATH WITH EXTENSION\n[" + str(file) + "]")
-        file = input("file: ")
-        print(file)
+        file = current_dir + file
+        print("relative file path:\n" + file)
 
 output = input("output(if empty '  + _new'): ")
 
@@ -48,14 +46,14 @@ def blocks(f_in, f_out):
 
     for line in f_in:
         line_counter += 1
-        if line == delimiter:
-            line_index = 0
+        line_index += 1
+        if line != delimiter:
             blocks_list.insert(line_index, line)
-        elif line != delimiter:
+        elif line == delimiter:
+            line_index = 0
             blocks_list.insert(line_index, line)
         else:
             print("SOMETHING HAPPENED AT LINE: {0}\n, STRING CONTENT: {1}".format(str(line_counter), str(line)))
-        line_index += 1
 
     f_out.writelines(blocks_list)
     print("SUCCESS BLOCKS REORDER COMPLETE")
