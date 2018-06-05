@@ -55,11 +55,7 @@ def blocks(f_in, f_out):
             blocks_list.insert(line_index, line)
         else:
             print("SOMETHING HAPPENED AT LINE: {0}\n"
-<<<<<<< HEAD
                   "STRING CONTENT: {1}".format(line_counter, line))
-=======
-                  "STRING CONTENT: {1}".format(str(line_counter), str(line)))
->>>>>>> d1130e239e3ed25aa4ff44d1b7efec92a7a6d197
 
     f_out.writelines(blocks_list)
     print("SUCCESS BLOCKS REORDER COMPLETE")
