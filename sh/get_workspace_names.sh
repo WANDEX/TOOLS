@@ -9,7 +9,7 @@ s_ws6=$(grep 'set $ws6 ' ~/.config/i3/config | sed -n -e 's/^.*set $ws6 //p')
 s_ws7=$(grep 'set $ws7 ' ~/.config/i3/config | sed -n -e 's/^.*set $ws7 //p')
 s_ws8=$(grep 'set $ws8 ' ~/.config/i3/config | sed -n -e 's/^.*set $ws8 //p')
 s_ws9=$(grep 'set $ws9 ' ~/.config/i3/config | sed -n -e 's/^.*set $ws9 //p')
-s_ws10=$(grep 'set $ws10 ' ~/.config/i3/config | sed -n -e 's/^.*set $ws10 //p')
+s_ws0=$(grep 'set $ws0 ' ~/.config/i3/config | sed -n -e 's/^.*set $ws0 //p')
 
 export WS1=$s_ws1
 export WS2=$s_ws2
@@ -20,4 +20,4 @@ export WS6=$s_ws6
 export WS7=$s_ws7
 export WS8=$s_ws8
 export WS9=$s_ws9
-export WS10=$s_ws10
+export WS10=$s_ws0
