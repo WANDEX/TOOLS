@@ -44,7 +44,6 @@ doUmount () {
 if isUUIDExist "$UUID" == "$UUID"; then
     mount_response=
     printf "Today is: '$DATE_NOW' and it will be your backup directory.\n"
-    #printf "!!!ENSURE THAT YOU PLUGGED IN BACKUP DEVICE!!!\n"
     printf "Mount device '$UUID' to '$MOUNT_POINT' mount point? \n(y/n) > "
     read mount_response
     if [ "$mount_response" != "y" ]; then
@@ -76,3 +75,4 @@ if isUUIDExist "$UUID" == "$UUID"; then
 else
     printf "\nUUID:'$UUID'\nDoes not exist\n"
 fi
+
