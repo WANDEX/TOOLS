@@ -13,8 +13,9 @@ rsync_oneliner () {                 #ensure that you have 'rsync' installed
     --exclude=/tmp/* --exclude=/run/* \
     --exclude=/mnt/* --exclude=/media/* \
     --exclude="swapfile" --exclude="lost+found" \
-    --exclude=".cache" --exclude="Downloads" \
     --exclude=".VirtualBoxVMs" --exclude=".ecryptfs" \
+    --exclude=".cache" --exclude=".cargo" --exclude="Downloads" \
+    --exclude=".local/share/Steam" --exclude=".lyrics" --exclude=".steam" \
     "$1" "$2"
 }
 
