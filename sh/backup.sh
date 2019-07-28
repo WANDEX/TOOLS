@@ -16,7 +16,8 @@ rsync_oneliner () {                 #ensure that you have 'rsync' installed
     --exclude=".VirtualBoxVMs" --exclude=".ecryptfs" \
     --exclude=".cache" --exclude=".cargo" --exclude="Downloads" \
     --exclude=".local/share/Steam" --exclude=".lyrics" --exclude=".steam" \
-    "$1" "$2"
+    "$1" "$2" \
+    --dry-run --log-file="$DEST_DIR/rsync.log"
 }
 
 isUUIDExist () { lsblk -o UUID|grep "$1"; }
