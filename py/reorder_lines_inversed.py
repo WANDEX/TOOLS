@@ -54,16 +54,20 @@ def blocks(f_in, f_out):
             line_index = 0
             blocks_list.insert(line_index, line)
         else:
-            print("SOMETHING HAPPENED AT LINE: {0}\n"
-                  "STRING CONTENT: {1}".format(line_counter, line))
+            print(
+                "SOMETHING HAPPENED AT LINE: {0}\n"
+                "STRING CONTENT: {1}".format(line_counter, line)
+            )
 
     f_out.writelines(blocks_list)
     print("SUCCESS BLOCKS REORDER COMPLETE")
 
 
 def execute():
-    with open(file, 'r', 1, encoding, errors='replace') as f_in, \
-         open(output, 'w', 1, encoding, errors='replace') as f_out:
+    """main execute method."""
+    with open(FILE, "r", 1, ENCODING, errors="replace") as f_in, open(
+            OUTPUT, "w", 1, ENCODING, errors="replace"
+    ) as f_out:
         reorder = ireorder()
         if reorder == "strict":
             strict(f_in, f_out)
