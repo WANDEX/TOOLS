@@ -18,8 +18,9 @@ rsync_oneliner () {                 #ensure that you have 'rsync' installed
     --exclude=".local/share/Steam" --exclude=".lyrics" --exclude=".steam" \
     --exclude=".stack" --exclude=".rustup" --exclude=".tor-browser" \
     --exclude="android.img" --exclude="nohup.out" \
+    --log-file="$DEST_DIR/rsync_$DATE_NOW.log" \
     "$1" "$2" \
-    --dry-run --log-file="$DEST_DIR/rsync.log"
+    #--dry-run
 }
 
 isUUIDExist () { lsblk -o UUID|grep "$1"; }
