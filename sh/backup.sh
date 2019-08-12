@@ -12,10 +12,12 @@ rsync_oneliner () {                 #ensure that you have 'rsync' installed
     --exclude=/proc/* --exclude=/sys/* \
     --exclude=/tmp/* --exclude=/run/* \
     --exclude=/mnt/* --exclude=/media/* \
-    --exclude="swapfile" --exclude="lost+found" \
-    --exclude=".VirtualBoxVMs" --exclude=".ecryptfs" \
+    --exclude="swapfile" --exclude="lost+found" --exclude=".ecryptfs" \
+    --exclude=".VirtualBoxVMs" --exclude="/var/lib/libvirt/images/" \
     --exclude=".cache" --exclude=".cargo" --exclude="Downloads" \
     --exclude=".local/share/Steam" --exclude=".lyrics" --exclude=".steam" \
+    --exclude=".stack" --exclude=".rustup" --exclude=".tor-browser" \
+    --exclude="android.img" --exclude="nohup.out" \
     "$1" "$2" \
     --dry-run --log-file="$DEST_DIR/rsync.log"
 }
