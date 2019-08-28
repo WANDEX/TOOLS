@@ -59,6 +59,8 @@ if isUUIDExist "$UUID" == "$UUID"; then
     else
         mount -v UUID=$UUID $MOUNT_POINT
         mkdir -pv $DEST_DIR # -p ensures creation if directory does not exist
+        df -h $MOUNT_POINT  # show used/available space at MOUNT_POINT
+        printf "\nLog File Destination and name:\n$LOGFILE\n"
 
         start_response=
         printf "START BACKUP PROCESS? \n(y/n) > "
