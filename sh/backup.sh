@@ -1,11 +1,14 @@
 #!/bin/sh
 DEFBACKUPDIR=$"/mnt/arch100Gbackup/LAST/"
 DATE_NOW=$(date +"%y-%m-%d")
+TIME_NOW=$(date +"%T")
 SOURCE_DIR=$"/" #what directory to backup, / - means root directory
 MOUNT_POINT=$"/mnt/arch100Gbackup/" #your mounting point
 DEST_DIR=$"$MOUNT_POINT$DATE_NOW/"  #backup destination directory
+LOGEXCL=".rsync_" # part of log file name for excluding at destination
+LOGNAME=$"$LOGEXCL$DATE_NOW+$TIME_NOW.log"   # log file name
+LOGFILE=$"$DEST_DIR$LOGNAME"        # log file directory and name
 UUID=$"912ef2eb-7f30-4396-a300-5d91b46c79eb" #your backup device UUID
-
 
 rsync_oneliner () {                 #ensure that you have 'rsync' installed
     rsync -aAXv --delete --exclude=/dev/* \
