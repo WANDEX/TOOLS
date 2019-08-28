@@ -24,7 +24,7 @@ rsync_oneliner () {                 #ensure that you have 'rsync' installed
     --exclude=".local/share/TelegramDesktop" --exclude=".local/share/nvim" \
     --exclude=".stack" --exclude=".rustup" --exclude=".tor-browser" \
     --exclude="android.img" --exclude="nohup.out" \
-    --log-file="$DEST_DIR/rsync_$DATE_NOW.log" \
+    --log-file="$LOGFILE" --filter="P /$LOGEXCL*" --exclude="/$LOGEXCL*" \
     "$1" "$2" \
     #--dry-run
 }
