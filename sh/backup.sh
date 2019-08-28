@@ -72,9 +72,6 @@ if isUUIDExist "$UUID" == "$UUID"; then
         else
             rsync_oneliner $SOURCE_DIR $DEST_DIR
 
-            # sizes of all directories inside $MOUNT_POINT sorted by name
-            TOTAL_MP=$(du -ahc --max-depth=1 $MOUNT_POINT | sort -k 2 | tr '\0' '\n')
-            printf "\n%s\n" "$TOTAL_MP"
             printf "...DONE...\n\n"
             doUmount
         fi
