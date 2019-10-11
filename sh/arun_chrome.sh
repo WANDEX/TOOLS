@@ -1,5 +1,3 @@
 #!/bin/sh
-i3-msg workspace $WS2
+i3-msg workspace $WS7
 google-chrome-stable
-# return to workspace 1
-i3-msg workspace $WS1
