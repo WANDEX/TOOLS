@@ -27,7 +27,7 @@ def main():
     validate_path(S_PATH)
     get_file_paths(S_PATH)
     print(l_fullpath)
-    print("files:".format(len(l_fullpath)))
+    print("files:{0}".format(len(l_fullpath)))
 
 
 main()
