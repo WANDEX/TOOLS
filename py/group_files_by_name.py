@@ -32,43 +32,33 @@ def line_by_line():
         print("{0}".format(line))
 
 
-def long_substr(data):
-    substr = ""
-    if len(data) > 1 and len(data[0]) > 0:
-        for i in range(len(data[0])):
-            for j in range(len(data[0]) - i + 1):
-                if j > len(substr) and is_substr(data[0][i:i+j], data):
-                    substr = data[0][i:i+j]
-    return substr
-
-
-def is_substr(find, data):
-    if len(data) < 1 and len(find) < 1:
-        return False
-    for i in range(len(data)):
-        if find not in data[i]:
-            return False
-    return True
-
-
-def longest_common_substring():
-    l_filenames = []
-    for line in l_fullpath:
-        l_filenames.append(line[1])
-        # print("{0}".format(line[1]))
-    print(l_filenames[0:10])
-    long_substr(l_filenames)
+def common_prefix(m):
+    """
+    Given a list of pathnames, returns the longest common leading component
+    """
+    if not m:
+        return ""
+    prefix = m[0]
+    for item in m:
+        for i in range(len(prefix)):
+            if prefix[:i+1] != item[:i+1]:
+                prefix = prefix[:i]
+                if i == 0:
+                    return ""
+                break
+    return prefix
 
 
 def main():
+    test_list = ["objMonitors_0.png", "objMonitors_1.png", "objMonitors_2.png", "shit"]
     validate_path(S_PATH)
     get_file_paths(S_PATH)
     # print(l_fullpath)
-    line_by_line()
+    # line_by_line()
     # print(long_substr())
     # print(l_fullpath.pop(0)[1])
+    print(common_prefix(test_list))
     print(len(l_fullpath))
-    # longest_common_substring()
 
 
 main()
