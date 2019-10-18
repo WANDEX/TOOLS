@@ -49,6 +49,18 @@ def common_prefix(m):
     return prefix
 
 
+def get_common_start(seq):
+    if not seq:
+        return ""
+    s1, s2 = min(seq), max(seq)
+    length = min(len(s1), len(s2))
+    if length == 0:
+        return ""
+    for i in range(length):
+        if s1[i] != s2[i]:
+            return s1[0:i]
+    return s1[0:length]
+
 def main():
     test_list = ["objMonitors_0.png", "objMonitors_1.png", "objMonitors_2.png", "shit"]
     validate_path(S_PATH)
