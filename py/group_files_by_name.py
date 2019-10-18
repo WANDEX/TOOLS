@@ -91,6 +91,16 @@ def get_prefixes(f_list):
     common_prefix.pop(0)  # remove first empty element
     print("common_prefix:{0}".format(common_prefix))
 
+
+def file_loop(f_list):
+    l_paths = []
+    l_names = []
+    for file in f_list:
+        l_paths.append(file[0])
+        l_names.append(file[1])
+    get_prefixes(l_names[1:11])
+
+
 def main():
     test_list = ["objMonitors_0.png", "objMonitors_1.png", "objMonitors_2.png", "shit"]
     validate_path(S_PATH)
