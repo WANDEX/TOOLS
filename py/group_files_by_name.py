@@ -109,7 +109,8 @@ def main():
     # line_by_line()
     # print(long_substr())
     # print(l_fullpath.pop(0)[1])
-    print(common_prefix(test_list))
+    # get_prefixes(test_list)
+    file_loop(l_fullpath)
     print(len(l_fullpath))
 
 
