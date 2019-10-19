@@ -52,6 +52,16 @@ def count_words(str):
             c += 1
     return c
 
+
+def str_filter(string):
+    bad_chars = ["_", ";", ":", "!", ",", "*"]
+    numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
+    # bad_chars.extend(numbers)
+    # string = string[:string.find(".")]  # remove all characters after "."
+    l_filter = list(filter(lambda i: i not in bad_chars, string))
+    filtered = str().join(l_filter)
+    return filtered
+
     extensible_f_list = []
     temp_f_list = []
     last_element = itemgetter(-1)
