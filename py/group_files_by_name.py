@@ -62,8 +62,13 @@ def get_common_start(seq):
     return s1[0:length]
 
 
-def get_prefixes(f_list):
-    common_prefix = [""]
+def count_words(str):
+    c = 1
+    for i in range(1, len(str) - 1):
+        if (str[i].isupper()):
+            c += 1
+    return c
+
     extensible_f_list = []
     temp_f_list = []
     last_element = itemgetter(-1)
