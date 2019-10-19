@@ -101,25 +101,38 @@ def get_prefixes(f_list, min_prefix_width=3, word_count=1):
     print("element_count:{0}".format(len(common_prefix)))
 
 
-def file_loop(f_list):
+def file_loop(f_list, min_prefix_width=3, range=1000):
     l_paths = []
     l_names = []
     for file in f_list:
         l_paths.append(file[0])
-        l_names.append(file[1])
-    get_prefixes(l_names[1:11])
+        # l_names.append(file[1])
+        l_names.append(str_filter(file[1]))
+
+        # print("file?:{0}".format(file))
+    if range <= 0:
+        get_prefixes(l_names, min_prefix_width)
+    else:
+        get_prefixes(l_names[:range], min_prefix_width)
+
+    # for file in f_list:
+
+
+# def stick_to_group(f_list, d_group):
+    # for file in f_list:
 
 
 def main():
-    test_list = ["objMonitors_0.png", "objMonitors_1.png", "objMonitors_2.png", "shit"]
     validate_path(S_PATH)
     get_file_paths(S_PATH)
     # print(l_fullpath)
     # line_by_line()
     # print(long_substr())
     # print(l_fullpath.pop(0)[1])
-    # get_prefixes(test_list)
-    file_loop(l_fullpath)
+    file_loop(l_fullpath, 5, 0)
+    # print(count_words("sprVHSStapes"))
+    print(str_filter("sprVHSStapes_12.png"))
+    print(l_group)
     print(len(l_fullpath))
 
 
