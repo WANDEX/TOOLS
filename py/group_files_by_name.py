@@ -7,6 +7,7 @@ from itertools import count
 
 S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/images/"
 l_fullpath = []
+l_group = []
 
 
 def validate_path(s_path):
