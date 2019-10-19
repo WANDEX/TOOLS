@@ -32,23 +32,6 @@ def line_by_line():
         print("{0}".format(line))
 
 
-def common_prefix(m):
-    """
-    Given a list of pathnames, returns the longest common leading component
-    """
-    if not m:
-        return ""
-    prefix = m[0]
-    for item in m:
-        for i in range(len(prefix)):
-            if prefix[:i+1] != item[:i+1]:
-                prefix = prefix[:i]
-                if i == 0:
-                    return ""
-                break
-    return prefix
-
-
 def get_common_start(seq):
     if not seq:
         return ""
