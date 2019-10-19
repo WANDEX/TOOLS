@@ -62,18 +62,24 @@ def str_filter(string):
     filtered = str().join(l_filter)
     return filtered
 
+
+def get_prefixes(f_list, min_prefix_width=3, word_count=1):
     extensible_f_list = []
     temp_f_list = []
+    common_prefix = [""]
+    d_group = {}
     last_element = itemgetter(-1)
-    for file in f_list:
+    for file in f_list[:20]:
         extensible_f_list.append(file)
-        print("extensible_f_list:{0}".format(extensible_f_list))
-        print("file:{0}".format(file))
+        # print("extensible_f_list:{0}".format(extensible_f_list))
 
-        if len(get_common_start(extensible_f_list)) > 0:
+        if (
+                count_words(get_common_start(extensible_f_list)) > word_count and
+                len(get_common_start(extensible_f_list)) > min_prefix_width
+           ):
             temp_f_list = extensible_f_list.copy()
         else:
-            print("clear at file:{0}".format(file))
+            # print("clear at file:{0}".format(file))
             extensible_f_list.clear()
 
         if len(get_common_start(extensible_f_list)) == 0:
@@ -81,13 +87,18 @@ def str_filter(string):
             if last_element(common_prefix) != get_common_start(temp_f_list):
                 common_prefix.append(get_common_start(temp_f_list))
 
-        print("temp_f_list:{0}".format(temp_f_list))
-        print("prefix:\t{0}".format(last_element(common_prefix)))
+        # print(file)
+        d_group.update({file: last_element(common_prefix)})
+        l_group.extend(d_group.items())
+
+        print("file:{0}\t[temp_f_list]:\n{1}".format(file, temp_f_list))
+        # print("prefix:\t{0}".format(last_element(common_prefix)))
         print()
     if last_element(common_prefix) != get_common_start(temp_f_list):
         common_prefix.append(get_common_start(temp_f_list))
     common_prefix.pop(0)  # remove first empty element
-    print("common_prefix:{0}".format(common_prefix))
+    print("common_prefix:\n{0}".format(common_prefix))
+    print("element_count:{0}".format(len(common_prefix)))
 
 
 def file_loop(f_list):
