@@ -5,7 +5,8 @@ import collections
 from operator import itemgetter
 from itertools import count
 
-S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/images/"
+# S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/hotline_miami/"
+S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/test/"
 l_fullpath = []
 l_group = []
 
