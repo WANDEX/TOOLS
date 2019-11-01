@@ -29,11 +29,6 @@ def get_file_paths(s_path):
     l_fullpath.sort(key=itemgetter(1))
 
 
-def line_by_line():
-    for line in l_fullpath:
-        print("{0}".format(line))
-
-
 def get_common_start(seq):
     if not seq:
         return ""
