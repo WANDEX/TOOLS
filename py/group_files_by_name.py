@@ -122,15 +122,13 @@ def file_loop(f_list, min_prefix_width=3, range=1000):
 def main():
     validate_path(S_PATH)
     get_file_paths(S_PATH)
-    # print(l_fullpath)
-    # line_by_line()
-    # print(long_substr())
-    # print(l_fullpath.pop(0)[1])
-    file_loop(l_fullpath, 5, 0)
+    file_loop(l_fullpath, 0)
     # print(count_words("sprVHSStapes"))
-    print(str_filter("sprVHSStapes_12.png"))
-    print(l_group)
-    print(len(l_fullpath))
+    # print(str_filter("sprVHSStapes_12.png"))
+    print("\nl_group:")
+    print(*l_group, sep="\n")
+    # print(*l_fullpath, sep="\n")
+    print("\nNumber of files: {0}".format(str(len(l_fullpath))))
 
 
 main()
