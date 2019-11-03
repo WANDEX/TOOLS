@@ -2,13 +2,21 @@
 # -*- coding: utf-8 -*-
 import os
 import collections
+from re import split
 from operator import itemgetter
 from itertools import count
 
-# S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/hotline_miami/"
-S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/test/"
+S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/hotline_miami/"
+# S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/test/"
 l_fullpath = []
 l_group = []
+
+
+def sort_natural(l, key):
+    """ Sort the given iterable in the way that humans expect."""
+    convert = lambda text: int(text) if text.isdigit() else text
+    alphanum_key = lambda item: [convert(c) for c in split('([0-9]+)', key(item))]
+    return l.sort(key=alphanum_key)
 
 
 def validate_path(s_path):
