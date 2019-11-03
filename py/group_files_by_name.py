@@ -34,7 +34,7 @@ def get_file_paths(s_path):
         for filename in filenames:
             d_fullpath.update({dirpath: filename})
             l_fullpath.extend(d_fullpath.items())
-    l_fullpath.sort(key=itemgetter(1))
+    sort_natural(l_fullpath, itemgetter(1))
 
 
 def get_common_start(seq):
@@ -71,7 +71,6 @@ def str_filter(string):
 def get_prefixes(f_list):
     d_group = {}
     previous_file = ""
-    # last_element = itemgetter(-1)
     for file in f_list:
         if previous_file:
             # FIX: common_prefix is empty list first
@@ -87,14 +86,16 @@ def get_prefixes(f_list):
 def file_loop(f_list, range=0):
     if range <= 0:
         get_prefixes(l_fullpath)
+        print("\nNumber of processed files: {0}".format(str(len(l_fullpath))))
     else:
         get_prefixes(l_fullpath[:range])
+        print("\nNumber of processed files: {0}".format(str(len(l_fullpath[:range]))))
 
 
 def main():
     validate_path(S_PATH)
     get_file_paths(S_PATH)
-    file_loop(l_fullpath, 0)
+    file_loop(l_fullpath, 100)
     # print(count_words("sprVHSStapes"))
     # print(str_filter("sprVHSStapes_12.png"))
     print("\nl_group:")
