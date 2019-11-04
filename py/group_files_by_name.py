@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 import collections
+import pathlib
 from re import split
 from operator import itemgetter
 from itertools import count
@@ -100,7 +101,14 @@ def file_loop(f_list, range=0):
         get_prefixes(l_fullpath[:range])
 
 
-def main():
+def make_new_root_dir():
+    old_path = pathlib.PurePath(S_PATH)
+    new_dir_name = old_path.name + "_grouped"
+    new_path = old_path.parent.joinpath(new_dir_name)
+    pathlib.Path(new_path).mkdir(exist_ok=True)
+    print("\nNew path is:\n{0}".format(new_path))
+
+
 def main(range=0):
     validate_path(S_PATH)
     get_file_paths(S_PATH)
@@ -109,6 +117,7 @@ def main(range=0):
     print(*l_group, sep="\n")
     # print(*l_fullpath, sep="\n")
     print(processed_files(range))
+    make_new_root_dir()
 
 
 main()
