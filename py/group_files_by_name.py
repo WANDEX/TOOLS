@@ -83,25 +83,32 @@ def get_prefixes(f_list):
     l_group.extend(d_group.items())
 
 
+def processed_files(range=0):
+    """ Simple output message. """
+    if range <= 0:
+        range = len(l_fullpath)
+    processed = "Number of files processed: {0}".format(str(range))
+    total = "Total number of files in path: {0}".format(str(len(l_fullpath)))
+    msg = "\n{0}\n{1}".format(processed, total)
+    return msg
+
+
 def file_loop(f_list, range=0):
     if range <= 0:
         get_prefixes(l_fullpath)
-        print("\nNumber of processed files: {0}".format(str(len(l_fullpath))))
     else:
         get_prefixes(l_fullpath[:range])
-        print("\nNumber of processed files: {0}".format(str(len(l_fullpath[:range]))))
 
 
 def main():
+def main(range=0):
     validate_path(S_PATH)
     get_file_paths(S_PATH)
-    file_loop(l_fullpath, 100)
-    # print(count_words("sprVHSStapes"))
-    # print(str_filter("sprVHSStapes_12.png"))
+    file_loop(l_fullpath, range)
     print("\nl_group:")
     print(*l_group, sep="\n")
     # print(*l_fullpath, sep="\n")
-    print("\nNumber of files: {0}".format(str(len(l_fullpath))))
+    print(processed_files(range))
 
 
 main()
