@@ -3,6 +3,7 @@
 import os
 import collections
 import pathlib
+from shutil import copyfile
 from re import split
 from operator import itemgetter
 from itertools import count
@@ -110,6 +111,14 @@ def make_new_root_dir():
     return new_dir_path
 
 
+def file_copying(l_groups):
+    new_dir_path = make_new_root_dir()
+    for (path, group) in l_groups:
+        src_path = pathlib.PurePath("".join(path))
+        dst_path = pathlib.PurePath.joinpath(new_dir_path, group, path[1])
+        pathlib.Path(dst_path.parent).mkdir(parents=True, exist_ok=True)
+        copyfile(src_path, dst_path)
+        print("src:{0}\t\tgroup:{1}\ndst:{2}\n".format(src_path, group, dst_path))
 
 
 def main(range=0):
@@ -120,7 +129,7 @@ def main(range=0):
     print(*l_group, sep="\n")
     # print(*l_fullpath, sep="\n")
     print(processed_files(range))
-    make_new_root_dir()
+    file_copying(l_group)
 
 
 main()
