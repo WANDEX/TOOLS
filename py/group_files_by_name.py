@@ -104,9 +104,12 @@ def file_loop(f_list, range=0):
 def make_new_root_dir():
     old_path = pathlib.PurePath(S_PATH)
     new_dir_name = old_path.name + "_grouped"
-    new_path = old_path.parent.joinpath(new_dir_name)
-    pathlib.Path(new_path).mkdir(exist_ok=True)
-    print("\nNew path is:\n{0}".format(new_path))
+    new_dir_path = old_path.parent.joinpath(new_dir_name)
+    pathlib.Path(new_dir_path).mkdir(exist_ok=True)
+    print("\nNew dir path is:\n{0}\n".format(new_dir_path))
+    return new_dir_path
+
+
 
 
 def main(range=0):
