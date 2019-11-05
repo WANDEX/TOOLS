@@ -99,13 +99,13 @@ def get_prefixes(f_list):
     previous_file = ""
     for file in f_list:
         if previous_file:
-            # FIX: common_prefix is empty list first
             temp_temp_f_list = [previous_file[1], file[1]]
             test_prefix = str(get_common_start(temp_temp_f_list)).rstrip("_ ")
             if len(test_prefix) > len(previous_file[1]) - len(previous_file[1]) // 2:
                 d_group.update({previous_file: test_prefix})
                 d_group.update({file: test_prefix})
         previous_file = file
+        progress_bar(next(c_prefix), len(f_list), status="getting prefixes")
     l_group.extend(d_group.items())
 
 
