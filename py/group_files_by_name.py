@@ -56,7 +56,7 @@ def validate_path(s_path):
 
 def get_file_paths(s_path):
     d_fullpath = {}
-    for (dirpath, dirnames, filenames) in os.walk(s_path):
+    for (dirpath, dirnames, filenames) in walk(s_path):
         for filename in filenames:
             d_fullpath.update({dirpath: filename})
             l_fullpath.extend(d_fullpath.items())
