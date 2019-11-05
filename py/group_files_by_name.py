@@ -1,17 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
-import collections
 import pathlib
+from os import walk
+from sys import stdout
+from time import sleep
+from itertools import count
 from shutil import copyfile
 from re import split
 from operator import itemgetter
-from itertools import count
 
-S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/hotline_miami/"
-# S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/test/"
+# S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/hotline_miami/"
+S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/test/"
 l_fullpath = []
 l_group = []
+dots = []
+c_prefix = count()
+c_file = count()
+
+
+def dots_anim():
+    """ Silly dots animation effect. """
+    if len(dots) < 3:
+        dots.append(".")
+    else:
+        dots.clear()
+    return "".join(dots)
+
+
 
 
 def sort_natural(l, key):
