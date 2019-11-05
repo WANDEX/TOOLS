@@ -142,18 +142,19 @@ def file_copying(l_groups):
         dst_path = pathlib.PurePath.joinpath(new_dir_path, group, path[1])
         pathlib.Path(dst_path.parent).mkdir(parents=True, exist_ok=True)
         copyfile(src_path, dst_path)
-        print("src:{0}\t\tgroup:{1}\ndst:{2}\n".format(src_path, group, dst_path))
+        print("file: {:<40} dir: {:<40}".format(str(src_path.name), str(group)))
+        progress_bar(next(c_file), len(l_group), status="copying files")
+    print("\nCOPYING COMPLETED")
 
 
 def main(range=0):
     validate_path(S_PATH)
     get_file_paths(S_PATH)
     file_loop(l_fullpath, range)
-    print("\nl_group:")
-    print(*l_group, sep="\n")
+    # print(*l_group, sep="\n")
     # print(*l_fullpath, sep="\n")
-    print(processed_files(range))
     file_copying(l_group)
+    print(processed_files(range))
 
 
 main()
