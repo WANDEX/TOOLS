@@ -46,7 +46,7 @@ def sort_natural(l, key):
 
 
 def validate_path(s_path):
-    if os.path.isdir(s_path):
+    if pathlib.Path.is_dir(pathlib.Path(s_path)):
         print("Provided path is directory:\n{0}".format(str(s_path)))
     else:
         print("Provided path is not directory:\n{0}".format(str(s_path)))
