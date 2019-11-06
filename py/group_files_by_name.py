@@ -17,6 +17,26 @@ c_prefix = count()
 c_file = count()
 
 
+def _parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--count",
+        type=int,
+        default=0,
+        help="number of files to process",
+    )
+    parser.add_argument(
+        "-p",
+        "--path",
+        type=pathlib.Path,
+        default=pathlib.Path(__file__).absolute().parent,
+        required=True,
+        help="path to the source directory",
+    )
+    return parser.parse_args()
+
+
 def dots_anim():
     """ Silly dots animation effect. """
     if len(dots) < 3:
