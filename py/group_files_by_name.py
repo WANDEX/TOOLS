@@ -65,10 +65,11 @@ def sort_natural(l, key):
 
 
 def validate_path(s_path):
-    if pathlib.Path.is_dir(pathlib.Path(s_path)):
-        print("Provided path is directory:\n{0}".format(str(s_path)))
+    abs_path = pathlib.Path.absolute(s_path)
+    if pathlib.Path.is_dir(abs_path):
+        print("Provided path is directory:\n{0}".format(str(abs_path)))
     else:
-        print("Provided path is not directory:\n{0}".format(str(s_path)))
+        print("Provided path is not directory:\n{0}".format(str(abs_path)))
         print("Exiting.")
         quit()
 
