@@ -46,7 +46,7 @@ def dots_anim():
     return "".join(dots)
 
 
-def progress_bar(count, total, status=''):
+def progress_bar(count, total, status='', sleep_sec_float=0.0):
     bar_len = 38
     filled_len = int(round(bar_len * count / float(total - 1)))
     percents = round(100.0 * count / float(total - 1), 1)
@@ -54,7 +54,7 @@ def progress_bar(count, total, status=''):
     stdout.write("\033[K")  # erase to end of line
     stdout.write("[{}] {:>5}{:<5} {}{}\r".format(bar, percents, '%', status, dots_anim()))
     stdout.flush()
-    sleep(0.1)
+    sleep(sleep_sec_float)
 
 
 def sort_natural(l, key):
