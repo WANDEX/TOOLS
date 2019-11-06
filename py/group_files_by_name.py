@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import argparse
 import pathlib
-from os import walk
+from os import walk, sep
 from sys import stdout
 from time import sleep
 from itertools import count
@@ -9,8 +10,6 @@ from shutil import copyfile
 from re import split
 from operator import itemgetter
 
-# S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/hotline_miami/"
-S_PATH = "/home/wndx/Downloads/Pictures/hotline_miami/test/"
 l_fullpath = []
 l_group = []
 dots = []
