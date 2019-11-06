@@ -124,7 +124,7 @@ def get_prefixes(f_list):
                 d_group.update({previous_file: test_prefix})
                 d_group.update({file: test_prefix})
         previous_file = file
-        progress_bar(next(c_prefix), len(f_list), status="getting prefixes")
+        progress_bar(next(c_prefix), len(f_list), "getting prefixes", _parse_args().sleep)
     l_group.extend(d_group.items())
 
 
@@ -163,6 +163,7 @@ def file_copying(l_groups):
         copyfile(src_path, dst_path)
         print("file: {:<40} dir: {:<40}".format(str(src_path.name), str(group)))
         progress_bar(next(c_file), len(l_group), status="copying files")
+        progress_bar(next(c_file), len(l_group), "copying files", _parse_args().sleep)
     print("\nCOPYING COMPLETED")
 
 
