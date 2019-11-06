@@ -155,15 +155,19 @@ def make_new_root_dir():
     return new_dir_path
 
 
-def file_copying(l_groups):
+def file_copying(l_groups, show_full_path=False):
+    width = 20
     new_dir_path = make_new_root_dir()
     for (path, group) in l_groups:
+        width = len(group) if len(group) > width else width
         src_path = pathlib.PurePath("".join(path))
         dst_path = pathlib.PurePath.joinpath(new_dir_path, group, path[1])
         pathlib.Path(dst_path.parent).mkdir(parents=True, exist_ok=True)
         copyfile(src_path, dst_path)
-        print("file: {:<40} dir: {:<40}".format(str(src_path.name), str(group)))
-        progress_bar(next(c_file), len(l_group), status="copying files")
+        if show_full_path:
+            print("dir: {:<{width}} file: {}".format(str(group), str(src_path), width=width))
+        else:
+            print("dir: {:<{width}} file: {:<40}".format(str(group), str(src_path.name), width=width))
         progress_bar(next(c_file), len(l_group), "copying files", _parse_args().sleep)
     print("\nCOPYING COMPLETED")
 
