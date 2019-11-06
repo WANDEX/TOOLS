@@ -77,7 +77,7 @@ def get_file_paths(s_path):
     d_fullpath = {}
     for (dirpath, dirnames, filenames) in walk(s_path):
         for filename in filenames:
-            d_fullpath.update({dirpath: filename})
+            d_fullpath.update({dirpath + sep: filename})
             l_fullpath.extend(d_fullpath.items())
     sort_natural(l_fullpath, itemgetter(1))
 
@@ -146,7 +146,7 @@ def file_loop(f_list, range=0):
 
 
 def make_new_root_dir():
-    old_path = pathlib.PurePath(S_PATH)
+    old_path = pathlib.PurePath(_parse_args().path)
     new_dir_name = old_path.name + "_grouped"
     new_dir_path = old_path.parent.joinpath(new_dir_name)
     pathlib.Path(new_dir_path).mkdir(exist_ok=True)
@@ -166,14 +166,14 @@ def file_copying(l_groups):
     print("\nCOPYING COMPLETED")
 
 
-def main(range=0):
-    validate_path(S_PATH)
-    get_file_paths(S_PATH)
-    file_loop(l_fullpath, range)
+def main():
+    validate_path(_parse_args().path)
+    get_file_paths(_parse_args().path)
+    file_loop(l_fullpath, _parse_args().count)
     # print(*l_group, sep="\n")
     # print(*l_fullpath, sep="\n")
     file_copying(l_group)
-    print(processed_files(range))
+    print(processed_files(_parse_args().count))
 
 
 main()
