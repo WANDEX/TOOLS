@@ -24,15 +24,29 @@ def _parse_args():
         "--count",
         type=int,
         default=0,
-        help="number of files to process",
+        help="number of files to process.",
+    )
+    parser.add_argument(
+        "-f",
+        "--full",
+        default=False,
+        help="if specified, display the full path when copying.",
+        action="store_true"
     )
     parser.add_argument(
         "-p",
         "--path",
         type=pathlib.Path,
         default=pathlib.Path(__file__).absolute().parent,
+        help="path to the source directory.",
         required=True,
-        help="path to the source directory",
+    )
+    parser.add_argument(
+        "-s",
+        "--sleep",
+        type=float,
+        default=0.0,
+        help="float number to wait between progress bar iterations, by def 0.0"
     )
     return parser.parse_args()
 
@@ -178,7 +192,7 @@ def main():
     file_loop(l_fullpath, _parse_args().count)
     # print(*l_group, sep="\n")
     # print(*l_fullpath, sep="\n")
-    file_copying(l_group)
+    file_copying(l_group, _parse_args().full)
     print(processed_files(_parse_args().count))
 
 
