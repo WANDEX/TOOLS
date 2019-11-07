@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import pathlib
-from os import walk, sep
+from os import sep, walk
 from sys import stdout
 from time import sleep
 from itertools import count
@@ -61,12 +61,12 @@ def dots_anim():
 
 
 def progress_bar(count, total, status='', sleep_sec_float=0.0, bar_len=37):
-    filled_len = int(round(bar_len * count / float(total - 1)))
-    percents = round(100.0 * count / float(total - 1), 1)
+    filled_len = int(round(bar_len * (count + 1) / float(total)))
+    percents = round(100.0 * (count + 1) / float(total), 1)
     bar = '#' * filled_len + '-' * (bar_len - filled_len)
     stdout.write("\033[K")  # erase to end of line
     stdout.write("[{}] [{:^4}/{:^4}] {:>5}{} {}{}\r".format(
-        bar, count, total, percents, '%', status, dots_anim())
+        bar, (count + 1), total, percents, '%', status, dots_anim())
     )
     stdout.flush()
     sleep(sleep_sec_float)
@@ -148,7 +148,7 @@ def processed_files(range=0):
     """ Simple output message. """
     if range <= 0:
         range = len(l_fullpath)
-    processed = "Number of files processed: {0}".format(str(range))
+    processed = "Number of files processed: {0}".format(str(range - 1))
     total = "Total number of files in path: {0}".format(str(len(l_fullpath)))
     msg = "\n{0}\n{1}".format(processed, total)
     return msg
