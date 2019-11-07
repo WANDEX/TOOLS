@@ -148,7 +148,7 @@ def processed_files(range=0):
     """ Simple output message. """
     if range <= 0:
         range = len(l_fullpath)
-    processed = "Number of files processed: {0}".format(str(range - 1))
+    processed = "Number of files processed: {0}".format(str(range))
     total = "Total number of files in path: {0}".format(str(len(l_fullpath)))
     msg = "\n{0}\n{1}".format(processed, total)
     return msg
