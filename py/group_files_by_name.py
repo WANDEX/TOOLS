@@ -129,6 +129,13 @@ def str_filter(string):
     return filtered
 
 
+def str_rstrip(string):
+    bad_chars = ["_", " "]
+    numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
+    bad_chars.extend(numbers)
+    result = str().join(bad_chars)
+    return string.rstrip(result)
+
 def get_prefixes(f_list):
     d_group = {}
     previous_file = ""
