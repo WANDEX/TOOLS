@@ -180,9 +180,13 @@ def file_copying(l_groups, show_full_path=False):
         pathlib.Path(dst_path.parent).mkdir(parents=True, exist_ok=True)
         copyfile(src_path, dst_path)
         if show_full_path:
-            print("dir: {:<{width}} file: {}".format(str(group), str(src_path), width=width))
+            print("dir: {:<{width}} file: {}".format(
+                str(group), str(src_path), width=width)
+            )
         else:
-            print("dir: {:<{width}} file: {:<40}".format(str(group), str(src_path.name), width=width))
+            print("dir: {:<{width}} file: {:<40}".format(
+                str(group), str(src_path.name), width=width)
+            )
         progress_bar(next(c_file), len(l_group), "copying files", _parse_args().sleep)
     print("\nCOPYING COMPLETED")
 
