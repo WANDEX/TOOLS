@@ -136,17 +136,37 @@ def str_rstrip(string):
     result = str().join(bad_chars)
     return string.rstrip(result)
 
+
 def get_prefixes(f_list):
     d_group = {}
     previous_file = ""
-    for file in f_list:
+    previous_prefix = ""
+    for current_file in f_list:
         if previous_file:
-            temp_temp_f_list = [previous_file[1], file[1]]
-            test_prefix = str(get_common_start(temp_temp_f_list)).rstrip("_ ")
-            if len(test_prefix) > len(previous_file[1]) - len(previous_file[1]) // 2:
-                d_group.update({previous_file: test_prefix})
-                d_group.update({file: test_prefix})
-        previous_file = file
+            prev_with_curr = [previous_file[1], current_file[1]]
+            current_prefix = str_rstrip(str(get_common_start(prev_with_curr)))
+            if (
+                (len(current_prefix) > len(previous_file[1]) // 2) and
+                (len(previous_prefix) > len(current_prefix))
+            ):
+                d_group.update({previous_file: previous_prefix})
+                d_group.update({current_file: current_prefix})
+            elif len(current_prefix) >= len(previous_file[1]) // 2:
+                d_group.update({previous_file: current_prefix})
+                d_group.update({current_file: current_prefix})
+            elif len(current_prefix) == len(previous_prefix):
+                d_group.update({previous_file: current_prefix})
+                d_group.update({current_file: current_prefix})
+            elif len(current_prefix) <= len(previous_prefix):
+                d_group.update({previous_file: previous_prefix})
+                # last in group
+                d_group.update({current_file: previous_prefix})
+            else:
+                # unique/uncaught files
+                d_group.update({previous_file: "(unique)"})
+                d_group.update({current_file:  "(unique)"})
+            previous_prefix = current_prefix
+        previous_file = current_file
         progress_bar(next(c_prefix), len(f_list), "getting prefixes", _parse_args().sleep)
     l_group.extend(d_group.items())
 
