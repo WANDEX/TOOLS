@@ -15,6 +15,7 @@ l_group = []
 dots = []
 c_prefix = count()
 c_file = count()
+postfix = "_grouped"
 
 
 def _parse_args():
@@ -190,16 +191,16 @@ def file_loop(f_list, range=0):
 
 def make_new_root_dir():
     old_path = pathlib.PurePath(_parse_args().path)
-    new_dir_name = old_path.name + "_grouped"
+    new_dir_name = old_path.name + postfix
     new_dir_path = old_path.parent.joinpath(new_dir_name)
     pathlib.Path(new_dir_path).mkdir(exist_ok=True)
-    print("\nNew dir path is:\n{0}\n".format(new_dir_path))
     return new_dir_path
 
 
 def file_copying(l_groups, show_full_path=False):
     width = 20
     new_dir_path = make_new_root_dir()
+    print("\nNew dir path is:\n{0}\n".format(new_dir_path))
     for (path, group) in l_groups:
         width = len(group) if len(group) > width else width
         src_path = pathlib.PurePath("".join(path))
