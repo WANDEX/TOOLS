@@ -219,6 +219,22 @@ def file_copying(l_groups, show_full_path=False):
     print("\nCOPYING COMPLETED")
 
 
+def group_into_subdirs(s_path):
+    d_subdirs = {}
+    l_dirs = []
+    pp = pathlib.PurePath
+    print(s_path)
+    # l_dirs = [pathlib.PurePath(directory[0]).stem for directory in walk(s_path)]
+    # [.stem ]
+    for directory in walk(s_path):
+        l_dirs.append({str(pp(directory[0]).parent): pp(directory[0]).name})
+
+    for directory in l_dirs:
+        print("dir: {}".format(directory))
+    # get_prefixes(l_dirs)
+    print("dirs inside: {}".format(len(l_dirs)))
+
+
 def main():
     validate_path(_parse_args().path)
     get_file_paths(_parse_args().path)
