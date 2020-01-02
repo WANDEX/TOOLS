@@ -6,16 +6,19 @@ from os import sep, walk
 from sys import stdout
 from time import sleep
 from itertools import count
-from shutil import copyfile
+from shutil import copyfile, move, rmtree
 from re import split
 from operator import itemgetter
 
 l_fullpath = []
 l_group = []
+l_subdirs = []
 dots = []
 c_prefix = count()
 c_file = count()
-postfix = "_grouped"
+c_dir = count()
+postfix_cp = "_cp"
+postfix_mv = "_mv"
 
 
 def _parse_args():
@@ -73,7 +76,7 @@ def progress_bar(count, total, status='', sleep_sec_float=0.0, bar_len=37):
     sleep(sleep_sec_float)
 
 
-def sort_natural(l, key):
+def sort_natural(l, key=itemgetter(1)):
     """ Sort the given iterable in the way that humans expect."""
     convert = lambda text: int(text) if text.isdigit() else text
     alphanum_key = lambda item: [convert(c) for c in split('([0-9]+)', key(item))]
@@ -96,7 +99,7 @@ def get_file_paths(s_path):
         for filename in filenames:
             d_fullpath.update({dirpath + sep: filename})
             l_fullpath.extend(d_fullpath.items())
-    sort_natural(l_fullpath, itemgetter(1))
+    sort_natural(l_fullpath)
 
 
 def get_common_start(seq):
@@ -115,7 +118,11 @@ def get_common_start(seq):
 def count_words(str):
     c = 1
     for i in range(1, len(str) - 1):
-        if (str[i].isupper()):
+        if (
+                (str[i+1] and str[i] == "_") or
+                (str[i+1] and str[i].isspace()) or
+                (str[i+1] and str[i+1].isupper())
+        ):
             c += 1
     return c
 
@@ -138,7 +145,7 @@ def str_rstrip(string):
     return string.rstrip(result)
 
 
-def get_prefixes(f_list):
+def get_prefixes(f_list, l_output):
     d_group = {}
     previous_file = ""
     previous_prefix = ""
@@ -168,8 +175,8 @@ def get_prefixes(f_list):
                 d_group.update({current_file:  "(unique)"})
             previous_prefix = current_prefix
         previous_file = current_file
-        progress_bar(next(c_prefix), len(f_list), "getting prefixes", _parse_args().sleep)
-    l_group.extend(d_group.items())
+        # progress_bar(next(c_prefix), len(f_list), "getting prefixes", _parse_args().sleep)
+    l_output.extend(d_group.items())
 
 
 def processed_files(range=0):
@@ -184,14 +191,14 @@ def processed_files(range=0):
 
 def file_loop(f_list, range=0):
     if range <= 0:
-        get_prefixes(l_fullpath)
+        get_prefixes(l_fullpath, l_group)
     else:
-        get_prefixes(l_fullpath[:range])
+        get_prefixes(l_fullpath[:range], l_group)
 
 
 def make_new_root_dir():
     old_path = pathlib.PurePath(_parse_args().path)
-    new_dir_name = old_path.name + postfix
+    new_dir_name = old_path.name + postfix_cp
     new_dir_path = old_path.parent.joinpath(new_dir_name)
     pathlib.Path(new_dir_path).mkdir(exist_ok=True)
     return new_dir_path
@@ -215,34 +222,60 @@ def file_copying(l_groups, show_full_path=False):
             print("dir: {:<{width}} file: {:<40}".format(
                 str(group), str(src_path.name), width=width)
             )
-        progress_bar(next(c_file), len(l_group), "copying files", _parse_args().sleep)
+        progress_bar(next(c_file), len(l_groups), "copying files", _parse_args().sleep)
     print("\nCOPYING COMPLETED")
 
 
 def group_into_subdirs(s_path):
-    d_subdirs = {}
     l_dirs = []
     pp = pathlib.PurePath
-    print(s_path)
-    # l_dirs = [pathlib.PurePath(directory[0]).stem for directory in walk(s_path)]
-    # [.stem ]
     for directory in walk(s_path):
-        l_dirs.append({str(pp(directory[0]).parent): pp(directory[0]).name})
+        l_dirs.append((str(pp(directory[0]).parent), pp(directory[0]).name))
+    l_dirs.pop(0)  # remove root dir
+    sort_natural(l_dirs)
+    get_prefixes(l_dirs, l_subdirs)
+    # print(*l_dirs, sep="\n")
+    print("\ndirs inside: {}".format(len(l_dirs)))
 
-    for directory in l_dirs:
-        print("dir: {}".format(directory))
-    # get_prefixes(l_dirs)
-    print("dirs inside: {}".format(len(l_dirs)))
+
+def dir_mv(s_path, l_groups):
+    for (path, group) in l_groups:
+        src_path = pathlib.PurePath().joinpath(path[0], path[1])
+        dst_path = pathlib.PurePath.joinpath(s_path, group, path[1])
+        move(src_path, dst_path)
+        print("{}".format(dst_path))
+        # print("s:{}\nd:{}".format(src_path, dst_path))
+        progress_bar(next(c_dir), len(l_groups), "moving files", _parse_args().sleep)
+    print("\nMOVING COMPLETED")
+
+
+def rm_dir(s_path):
+    path = pathlib.Path(s_path)
+    if pathlib.Path.is_dir(path):
+        rmtree(path, ignore_errors=True)
 
 
 def main():
-    validate_path(_parse_args().path)
-    get_file_paths(_parse_args().path)
+    path = _parse_args().path
+    path_cp = str(path) + postfix_cp
+    path_mv = str(path) + postfix_mv
+
+    rm_dir(path_cp)
+    rm_dir(path_mv)
+
+    validate_path(path)
+    get_file_paths(path)
     file_loop(l_fullpath, _parse_args().count)
-    # print(*l_group, sep="\n")
-    # print(*l_fullpath, sep="\n")
     file_copying(l_group, _parse_args().full)
     print(processed_files(_parse_args().count))
+
+    group_into_subdirs(path_cp)
+    dir_mv(pathlib.PurePath(path_mv), l_subdirs)
+
+    # print(*l_fullpath, sep="\n")
+    # print(*l_group, sep="\n")
+    # print(*l_subdirs, sep="\n")
+    # print(count_words("sprSushiGuyShake"))
 
 
 main()
