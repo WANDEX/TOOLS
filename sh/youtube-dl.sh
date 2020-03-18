@@ -1,5 +1,5 @@
 #!/bin/sh
-URL=$(xclip -o)
+URL=$(xclip -selection clipboard -out)
 VTITLE=$(youtube-dl --get-title "$URL")
 WEBM='bestvideo[ext=webm][height<=?1080]+bestaudio[ext=webm]'
 FALLBACK='bestvideo[height<=?1080]+bestaudio/best'
