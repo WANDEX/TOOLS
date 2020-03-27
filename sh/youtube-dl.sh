@@ -1,18 +1,25 @@
 #!/bin/sh
-URL=$(xclip -selection clipboard -out)
-VTITLE=$(youtube-dl --get-title "$URL")
+
+# use $1 or default
+URL="${1:-$(xclip -selection clipboard -out)}"
+
+# substring
+case "$URL" in
+    *"videos"*)
+        PROFILE='vods'
+    ;;
+    *"twitch"*)
+        PROFILE='stream'
+    ;;
+    *)
+        PROFILE='ytdl'
+    ;;
+esac >/dev/null
+
 WEBM='bestvideo[ext=webm][height<=?1080]+bestaudio[ext=webm]'
 FALLBACK='bestvideo[height<=?1080]+bestaudio/best'
 FORMAT="$WEBM"'/'"$FALLBACK"
-
-if [[ "$URL" == *"videos"* ]]; then
-    PROFILE='vods'
-elif [[ "$URL" == *"twitch"* ]]; then
-    PROFILE='stream'
-else
-    PROFILE='ytdl'
-fi
-
+VTITLE=$(youtube-dl --get-title "$URL")
 STATUS='Playing...['"$PROFILE"']'
 TITLE="$VTITLE"' | '"$PROFILE"' [YTDL]'
 
