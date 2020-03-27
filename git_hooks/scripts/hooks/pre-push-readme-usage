@@ -1,0 +1,69 @@
+#!/bin/sh
+# Automatically update README ## Usage
+
+# if any command inside script returns error, exit and return that error
+#set -e
+
+program_name='matrix'
+msg='readme usage updated.'
+
+# colors example
+# printf "%s\n" "Text in ${red}red${end}, white and ${blu}blue${end}."
+red=$'\e[1;31m'
+grn=$'\e[1;32m'
+yel=$'\e[1;33m'
+blu=$'\e[1;34m'
+mag=$'\e[1;35m'
+cyn=$'\e[1;36m'
+end=$'\e[0m'
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+root_dir=$(r=$(git rev-parse --show-toplevel) && ([[ -n $r ]] && echo "$r" || (cd $(git rev-parse --git-dir)/.. && pwd) ))
+
+edit_readme_usage() {
+    cd "$root_dir"
+    README="$(ls | grep -i readme*)"
+    PROGRAM="$(ls | grep -i "$program_name")"
+    readonly temp_usage='.usage'
+    # output help and replace all tabs in "$temp_usage" with 4 spaces
+    COMMAND="$(./"$PROGRAM" -h| expand -t 4 > "$temp_usage")"
+    # skip over the lines with /n and delete in between
+    sed -i '
+        /## Usage/,/```$/ {
+            /## Usage/n
+            /```.*$/n
+            /.*$/d
+        }
+    ' $README
+    # append text from a file after the pattern
+    sed -i '
+        /## Usage/,/```$/ {
+            /```..*/r '"${temp_usage}"'
+        }
+    ' $README
+    # remove temp file at the end
+    rm -rf "$temp_usage"
+    # show message
+    printf "${cyn}...HOOK...${end}${yel}${0}:${end} ${msg}\n"
+}
+
+check_readme_modification() {
+    # cancel push if README has not staged changes
+    CHECK_M="$(git status --porcelain| grep -i "$README")"
+    return_code=$?
+    if [ ! "$return_code" -ne 0 ]; then
+        printf "${red}ABORT ${README} has not staged changes.${end}\n"
+        printf "${cyn}Stage ${README}${end} and add it to commit first.${end}\n"
+        exit 1 # if you remove this line then it won't block push
+    fi
+}
+
+# a branch name where you want to prevent git push. In this case, it's "master"
+if [[ "$branch" == master ]]; then
+    # DO THINGS HERE
+    edit_readme_usage
+    check_readme_modification
+fi
+# At the end of a file there should be 'exit 0', if so git could push.
+
+exit 0
