@@ -31,8 +31,7 @@ edit_readme_usage() {
     sed -i '
         /## Usage/,/```$/ {
             /## Usage/n
-            /```.*$/n
-            /.*$/d
+            /```/!d
         }
     ' $README
     # append text from a file after the pattern
