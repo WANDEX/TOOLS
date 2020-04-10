@@ -13,7 +13,7 @@ case "$URL" in
         OUT+='~bandcamp/%(artist)s/%(playlist)s/%(playlist_index)02d. %(title)s.%(ext)s'
         OPT=( --embed-thumbnail )
     ;;
-    *"soundcloud"*"/sets/"*)
+    *"soundcloud"*"/sets/"*|*"soundcloud"*"/albums"*)
         OUT+='~soundcloud/%(uploader)s/%(playlist)s/%(playlist_index)02d. %(fulltitle)s.%(ext)s'
         OPT=( --embed-thumbnail )
     ;;
