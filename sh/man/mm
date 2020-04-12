@@ -1,0 +1,23 @@
+#!/bin/sh
+# invoke one of a man search scripts located inside file dir
+
+get_list_of_man_scripts() {
+    local abs_dir_path=$(dirname $(realpath "$0"))
+    # as abs paths excluding this file itself
+    LOMS=$(ls "$abs_dir_path"/* | grep -vw $(basename "$0"))
+}
+
+interactive() {
+    if [ -t 0 ]; then
+        echo "$LOMS" | dmenu -i -p 'choose man search script: ' -l 30 | xargs -r -o sh || exit 0
+    else
+        echo "$LOMS" | dmenu -i -p 'choose man search script: ' -l 30 | xargs -r $TERMINAL -e || exit 0
+    fi
+}
+
+main() {
+    get_list_of_man_scripts
+    interactive
+}
+
+main "$@"
