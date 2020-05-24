@@ -5,7 +5,7 @@ OUTPUT_ARRAY=($( ls "$OUTPUT_DIR" | cut -f1 -d"." | sort -h | tr '\n' ' ' ))
 OUTPUT_LENGTH=${#OUTPUT_ARRAY[@]}
 COLORS_ARRAY=(7 5 13)
 COLORS_LENGTH=${#COLORS_ARRAY[@]}
-FILE="$HOME"'/.scripts/.temp/.switch_pulse_preset_status.sh'
+FILE="$SCRIPTS"'/.temp/.switch_pulse_preset_status.sh'
 CURRENT_PRESET_NAME=$( "$FILE" | head -n 1 )
 X_RES_COLORS_COUNT=$(($(xrdb -query | grep '*.color' | awk '{print $2}' | wc -w) - 1))
 
