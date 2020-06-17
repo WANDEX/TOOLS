@@ -4,21 +4,21 @@ CACHE="$HOME"'/.cache/setbg'
 C_XARGS=$(cat "$CACHE" | awk 'NR==1')
 C_MARGS=$(cat "$CACHE" | awk 'NR==2')
 
-usage() {
-    # Help message
-    printf "Usage: $(basename $BASH_SOURCE) [OPTION...]\n"
-    printf "OPTIONS\n"
-    printf "\t-h, --help\t\tDisplay help\n"
-    printf "\t-i, --image\t\tProvide wallpaper image\n"
-    printf "\t-m, --margs\t\tUse \'magick convert\' arguments specified \'inside single quotes\'\n"
-    printf "\t-x, --xargs\t\tSet \'xwallpaper\' options\n"
-    printf "\t--outint\t\tSet output name by num from '1' to 'N' connected outputs\n"
-    printf "\t--outname\t\tSet output name with grep -i like 'VGA', first found if many\n"
-    printf "EXAMPLES\n"
-    printf "\t$(basename $BASH_SOURCE) -i image.jpg -x '--maximize' --margs='-colorspace Gray'\n"
-    printf "\t$(basename $BASH_SOURCE) -i image.jpg --margs='' # to clear margs cache\n"
-    exit 0
-}
+# read into variable using 'Here Document' code block
+read -d '' USAGE <<- EOF
+Usage: $(basename $BASH_SOURCE) [OPTION...]
+OPTIONS
+    -h, --help      Display help
+    -i, --image     Provide wallpaper image
+    -m, --margs     Use 'magick convert' arguments specified 'inside single quotes'
+    -x, --xargs     Set 'xwallpaper' options
+    --outint        Set output name by num from '1' to 'N' connected outputs
+    --outname       Set output name with grep -i like 'VGA', first found if many
+EXAMPLES
+    $(basename $BASH_SOURCE) -i image.jpg -x '--maximize' --margs='-colorspace Gray'
+    # and to clear margs cache
+    $(basename $BASH_SOURCE) -i image.jpg --margs=''
+EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
@@ -34,7 +34,8 @@ get_opt() {
     while true; do
         case "$1" in
         -h|--help)
-            usage
+            echo "$USAGE"
+            exit 0
             ;;
         -i|--image)
             shift
