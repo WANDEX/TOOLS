@@ -3,15 +3,18 @@
 
 get_list_of_man_scripts() {
     local abs_dir_path=$(dirname $(realpath "$0"))
-    # as abs paths excluding this file itself
-    LOMS=$(ls "$abs_dir_path"/* | grep -vw $(basename "$0"))
+    cd "$abs_dir_path"
+    local scripts=$(ls | grep -vw $(basename "$0")) # excluding this file itself
+    echo "$scripts" | dmenu -i -p 'choose man search script: ' -l 30 | xclip -in || exit 0
+    local selection="$(xclip -out)"
+    script_path="$abs_dir_path"'/'"$selection"
 }
 
 interactive() {
     if [ -t 0 ]; then
-        echo "$LOMS" | dmenu -i -p 'choose man search script: ' -l 30 | xargs -r -o sh || exit 0
+        sh "$script_path"
     else
-        echo "$LOMS" | dmenu -i -p 'choose man search script: ' -l 30 | xargs -r $TERMINAL -e || exit 0
+        $TERMINAL -e "$script_path"
     fi
 }
 
