@@ -2,7 +2,7 @@
 # auto run (execute) scripts inside this file dir
 
 task() {
-    echo "$1" | xargs -t -o -I % sh -c 'sleep 0.5 && % &>/dev/null'
+    echo "$1" | xargs -I % -ot sh -c 'sleep 1.0 && % &>/dev/null'
 }
 
 main() {
