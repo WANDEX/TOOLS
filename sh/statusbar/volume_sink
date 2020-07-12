@@ -16,7 +16,17 @@ case $BLOCK_BUTTON in
 	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 
-[ $(pamixer --sink "$SINK" --get-mute) = true ] && echo 🔇 && exit
+# substring in sink name
+case "$SINK" in
+    *"hdmi"*)
+        mute="🔇 HDMI"
+    ;;
+    *)
+        mute="🔇 MUTE"
+    ;;
+esac >/dev/null
+
+[ $(pamixer --sink "$SINK" --get-mute) = true ] && echo "$mute" && exit
 
 vol="$(pamixer --sink "$SINK" --get-volume)"
 
@@ -29,3 +39,4 @@ else
 fi
 
 echo "$icon $vol%"
+
