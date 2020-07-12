@@ -1,0 +1,23 @@
+#!/bin/sh
+# show active pulseeffects preset name
+
+case $BLOCK_BUTTON in
+	3) notify-send " pulseeffects module" "current preset name" ;;
+	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+esac
+
+FILE="$SCRIPTS/.temp/.switch_pulse_preset_status.sh"
+CURRENT_PRESET_NAME=$( "$FILE" | head -n 1 )
+
+# substring in preset name
+case "$CURRENT_PRESET_NAME" in
+    *"default"*)
+        preset=""
+    ;;
+    *)
+        preset="$CURRENT_PRESET_NAME"
+    ;;
+esac >/dev/null
+
+echo "$preset"
+
