@@ -1,0 +1,14 @@
+#!/bin/sh
+# show load average for last 1,5,15 minutes
+
+case $BLOCK_BUTTON in
+	1) notify-send "🖥 CPU hogs" "$(ps axch -o cmd:15,%cpu --sort=-%cpu | head)\\n(100% per core)" ;;
+	2) setsid -f "$TERMINAL" -e htop --sort-key PERCENT_CPU ;;
+	3) notify-send " loadavg module" "\- CPU load for last 1,5,15m
+- Click to show intensive processes.
+- Middle click to open htop." ;;
+	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+esac
+
+awk '{printf "%i%i%i\n", $1, $2, $3}' '/proc/loadavg'
+
