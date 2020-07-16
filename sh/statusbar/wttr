@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Displays todays precipication chance (💧) and daily low and high.
+# Usually intended for the statusbar.
+
+# if $1 or env variable doesn't exist - location by default is based on ip
+LOCATION="${1:-"$LOC0"}"
+weatherreport=$(curl -sf "https://wttr.in/$LOCATION")
+
+case $BLOCK_BUTTON in
+	1) setsid -f "$TERMINAL" -e echo "$weatherreport" ;;
+	3) notify-send "🌈 Weather module" "\- Left click for full forecast.
+💧: Todays maximum probability of rain/snow
+Daily low - Daily high" ;;
+	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+esac
+
+oneliner=$(curl -sf "https://wttr.in/$LOCATION?format="%c_%f_%P_%o"")
+# replace chars and split by \t
+sp=$(echo "$oneliner" | tr -d ' |\n' | sed "s/_/\t/g")
+# trim insufficient and make single variable each
+c=$(echo "$sp" | awk '{print $1}') # Weather condition
+f=$(echo "$sp" | awk '{print $2}' | tr -d '+|C') # Temperature (Feels Like)
+P=$(echo "$sp" | awk '{print $3}' | tr -d 'hPa' | sed 's/.$/k/') # pressure kPa
+o=$(echo "$sp" | awk '{print $4}') # Probability of Precipitation (0=empty?)
+result="$c$f$P$o"
+echo "$result" | tr -d '\n'
+# Some very particular and terse stream manipulation.
+# 💧todays the maximum probability of precipitation
+echo "$weatherreport" | sed '16q;d' | grep -wo "[0-9]*%" | sort -rn | sed "s/^/💧/g;1q" | tr -d '\n'
+# temp daily low - high
+echo "$weatherreport" | sed '13q;d' | grep -o "m\\([-+]\\)*[0-9]\\+" | sort -n -t 'm' -k 2n | sed -e 1b -e '$!d' | tr '\n|m' ' ' | awk '{print $1"-"$2"°"}'
+
