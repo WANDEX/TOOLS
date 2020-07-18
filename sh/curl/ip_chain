@@ -1,0 +1,3 @@
+#!/bin/sh
+# also for checking: ss -tupln
+proxychains curl 'https://icanhazip.com'

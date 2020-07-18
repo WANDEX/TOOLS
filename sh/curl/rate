@@ -1,0 +1,96 @@
+#!/bin/sh
+# get average crypto exchange rate for last ~5 min
+
+# read into variable using 'Here Document' code block
+read -d '' USAGE <<- EOF
+Usage: $(basename $BASH_SOURCE) [OPTION...]
+OPTIONS
+    -c, --convert   Convert and get sum of currencies, separated by (+/-) each
+    -e, --exchange  Change exchange currency (default: usd)
+    -n, --number    Number of currencies (default: 10)
+    -T, --text      Text only, no ANSI sequences
+    -t, --test      Activate url preview test mode
+    -h, --help      Display help
+    -H, --help-full Display full help which obtained via curl
+    --currencies    List of supported currencies with their full names
+    --coins         List of supported cryptocurrencies with their full names
+EXAMPLES
+    $(basename $BASH_SOURCE) -e eur
+    $(basename $BASH_SOURCE) -c 1BTC-10ETH+100LTC
+EOF
+
+get_opt() {
+    # Parse and read OPTIONS command-line options
+    SHORT=c:e:hHn:tT
+    LONG=convert:,coins,currencies,exchange:,help,help-full,number:,test,text
+    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
+    # PLACE FOR OPTION DEFAULTS
+    n=10
+    exchange="usd"
+    eval set -- "$OPTIONS"
+    while true; do
+        case "$1" in
+        -c|--convert)
+            shift
+            special="$1"
+            ;;
+        -e|--exchange)
+            shift
+            exchange="$1"
+            ;;
+        -h|--help)
+            echo "$USAGE"
+            exit 0
+            ;;
+        -H|--help-full)
+            echo "$USAGE"
+            echo "THE FOLLOWING IS OBTAINED USING CURL (EVERY TIME)"
+            special=":help"
+            ;;
+        -n|--number)
+            shift
+            case $1 in
+                0*)
+                    printf "$1\n^ unsupported number! exit.\n"
+                    exit 1
+                    ;;
+                ''|*[!0-9]*)
+                    printf "$1\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    exit 1
+                    ;;
+                *) n=$1 ;;
+            esac
+            ;;
+        -t|--test)
+            test=1
+            ;;
+        -T|--text)
+            T='T'
+            ;;
+        --coins)
+            special=":coins"
+            ;;
+        --currencies)
+            special=":currencies"
+            ;;
+        --)
+            shift
+            break
+            ;;
+        esac
+        shift
+    done
+}
+
+get_opt "$@"
+
+BASE='https://'"$exchange"'.rate.sx/'"$special"
+FULL="$BASE?qF$T&n=$n"
+
+if [[ $test ]]; then
+    echo "$FULL"
+    exit 0
+else
+    curl "$FULL"
+fi
+
