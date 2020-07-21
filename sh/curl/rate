@@ -5,9 +5,12 @@
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
+    -a, --awkformat Format awk printf feature
     -c, --convert   Convert and get sum of currencies, separated by (+/-) each
     -e, --exchange  Change exchange currency (default: usd)
+    -f, --format    Format of single line output
     -n, --number    Number of currencies (default: 10)
+    -o, --oneliner  Get multiple coins data separated via ',' as a delimiter
     -T, --text      Text only, no ANSI sequences
     -t, --test      Activate url preview test mode
     -h, --help      Display help
@@ -21,15 +24,20 @@ EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=c:e:hHn:tT
-    LONG=convert:,coins,currencies,exchange:,help,help-full,number:,test,text
+    SHORT=a:c:e:f:hHn:o:tT
+    LONG=awkformat:,convert:,coins,currencies,exchange:,format:,help,help-full,number:,oneliner:,test,text
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     n=10
     exchange="usd"
+    awkformat="%5.1f\n"
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
+        -a|--awkformat)
+            shift
+            awkformat="$1"
+            ;;
         -c|--convert)
             shift
             special="$1"
@@ -37,6 +45,10 @@ get_opt() {
         -e|--exchange)
             shift
             exchange="$1"
+            ;;
+        -f|--format)
+            shift
+            format="$1"
             ;;
         -h|--help)
             echo "$USAGE"
@@ -61,6 +73,10 @@ get_opt() {
                 *) n=$1 ;;
             esac
             ;;
+        -o|--oneliner)
+            shift
+            oneliner="$1"
+            ;;
         -t|--test)
             test=1
             ;;
@@ -84,13 +100,39 @@ get_opt() {
 
 get_opt "$@"
 
+single_line_output_format() {
+    # split line by '%.' character (insert \n before and after %single_char)
+    splitted=$(echo "$format" | sed -E 's/(%.)/\1\n/g' | sed -E 's/(%.)/\n\1/g')
+}
+
+get_as_one_line_defaults() {
+    n=1000 # to get n coins from table to parse
+    T='T'  # text only, no ANSI sequences
+}
+
+get_as_one_line() {
+    multiline="$1"
+    IFS=',' read -ra array <<< "$oneliner"
+    for name in "${array[@]}"; do
+        foundline=$(echo "$multiline" | tail -n +13 | grep -Fiw "$name" | sed 's/│ //g')
+        rank=$(echo "$foundline" | awk '{print $1}')
+        coin=$(echo "$foundline" | awk '{print $2}')
+        price=$(echo "$foundline" | awk '{print $3}' | awk '{printf "'"$awkformat"'", $1}')
+        ch24h=$(echo "$foundline" | awk '{print $4}')
+        ch01h=$(echo "$foundline" | awk '{print $5}')
+        mcap=$(echo "$foundline" | awk '{print $6}')
+        spark=$(echo "$foundline" | awk '{print $7}')
+        out+="$coin:$price "
+    done
+    echo "$out"
+}
+
+[[ $oneliner ]] && get_as_one_line_defaults
 BASE='https://'"$exchange"'.rate.sx/'"$special"
 FULL="$BASE?qF$T&n=$n"
+[[ $test ]] && echo "$FULL" && exit 0
 
-if [[ $test ]]; then
-    echo "$FULL"
-    exit 0
-else
-    curl "$FULL"
-fi
+CURL=$(curl -sf "$FULL")
+
+[[ $oneliner ]] && get_as_one_line "$CURL" || echo "$CURL"
 
