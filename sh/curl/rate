@@ -4,36 +4,40 @@
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
-OPTIONS
-    -a, --awkformat Format awk printf feature
+GENERAL OPTIONS
     -c, --convert   Convert and get sum of currencies, separated by (+/-) each
     -e, --exchange  Change exchange currency (default: usd)
-    -f, --format    Format of single line output:
-        %r rank | %c coin | %p price | %H ch24h | %h ch01h | %m mcap | %s spark
-    -n, --number    Number of currencies (default: 10)
-    -o, --oneliner  Get multiple coins data separated via ',' as a delimiter
+    -n, --number    Number of currencies in a spreadsheet (default: 10)
     -T, --text      Text only, no ANSI sequences
     -t, --test      Activate url preview test mode
+OUTPUT ONLY OPTIONS
+    -a, --awkformat Format fields (awk printf feature)
+    -d, --delimiter Delimiter to use between coins (man echo -e sequences sup.)
+    -f, --format    Format of output:
+        %r rank | %c coin | %p price | %H ch24h | %h ch01h | %m mcap | %s spark
+    -o, --output    Get multiple coins data separated via ',' as a delimiter
+HELP
     -h, --help      Display help
     -H, --help-full Display full help which obtained via curl
     --currencies    List of supported currencies with their full names
     --coins         List of supported cryptocurrencies with their full names
 EXAMPLES
-    $(basename $BASH_SOURCE) -e eur
+    $(basename $BASH_SOURCE) -c 1337usd -e eur
     $(basename $BASH_SOURCE) -c 1BTC-10ETH+100LTC
-    $(basename $BASH_SOURCE) -o btc,eth,bch -f "%c:%p[%H]"
+    $(basename $BASH_SOURCE) -o btc,eth,bch -f "%c:%p[%H]" -d '\\\n' -a '%8.3f'
 EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=a:c:e:f:hHn:o:tT
-    LONG=awkformat:,convert:,coins,currencies,exchange:,format:,help,help-full,number:,oneliner:,test,text
+    SHORT=a:c:d:e:f:hHn:o:tT
+    LONG=awkformat:,convert:,coins,currencies,delimiter:,exchange:,format:,help,help-full,number:,output:,test,text
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     n=10
     exchange="usd"
-    awkformat="%5.1f\n"
-    format="%c: %p"
+    awkformat="%3.1f"
+    format="%c:%p"
+    delimiter=" "
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
@@ -44,6 +48,10 @@ get_opt() {
         -c|--convert)
             shift
             special="$1"
+            ;;
+        -d|--delimiter)
+            shift
+            delimiter="$1"
             ;;
         -e|--exchange)
             shift
@@ -76,9 +84,9 @@ get_opt() {
                 *) n=$1 ;;
             esac
             ;;
-        -o|--oneliner)
+        -o|--output)
             shift
-            oneliner="$1"
+            output="$1"
             ;;
         -t|--test)
             test=1
@@ -103,14 +111,15 @@ get_opt() {
 
 get_opt "$@"
 
-get_as_one_line_defaults() {
+get_form_out_defaults() {
+    # essential defaults in order to work
     n=1000 # to get n coins from table to parse
     T='T'  # text only, no ANSI sequences
 }
 
-get_as_one_line() {
+get_form_out() {
     multiline="$1"
-    IFS=',' read -ra array <<< "$oneliner"
+    IFS=',' read -ra array <<< "$output"
     for name in "${array[@]}"; do
         foundline=$(echo "$multiline" | tail -n +13 | grep -Fiw "$name" | sed 's/│ //g')
         rank=$(echo "$foundline" | awk '{print $1}')
@@ -129,17 +138,17 @@ get_as_one_line() {
         [[ "$format" =~ "%h" ]] && frmt=$(echo "$frmt" | sed -E 's/%h/'"$ch01h"'/g')
         [[ "$format" =~ "%m" ]] && frmt=$(echo "$frmt" | sed -E 's/%m/'"$mcap"'/g')
         [[ "$format" =~ "%s" ]] && frmt=$(echo "$frmt" | sed -E 's/%s/'"$spark"'/g')
-        out+="$frmt "
+        out+="$frmt""$delimiter"
     done
-    echo "$out"
+    echo -e "$out"
 }
 
-[[ $oneliner ]] && get_as_one_line_defaults
+[[ $output ]] && get_form_out_defaults
 BASE='https://'"$exchange"'.rate.sx/'"$special"
 FULL="$BASE?qF$T&n=$n"
 [[ $test ]] && echo "$FULL" && exit 0
 
 CURL=$(curl -sf "$FULL")
 
-[[ $oneliner ]] && get_as_one_line "$CURL" || echo "$CURL"
+[[ $output ]] && get_form_out "$CURL" || echo "$CURL"
 
