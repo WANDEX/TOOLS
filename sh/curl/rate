@@ -103,18 +103,6 @@ get_opt() {
 
 get_opt "$@"
 
-single_line_output_format() {
-    # split line by '%.' character (insert \n before and after %single_char group)
-    splitted=$(echo "$format" | sed -E 's/(%.)/\n\1\n/g')
-    [[ "$splitted" =~ "%r" ]] && splitted=$(echo "$splitted" | sed -E 's/%r/'"$rank"'/g')
-    [[ "$splitted" =~ "%c" ]] && splitted=$(echo "$splitted" | sed -E 's/%c/'"$coin"'/g')
-    #[[ "$splitted" =~ "%p" ]] && echo "$splitted" | sed -E 's/%p/'"$coin"'/g'
-    #[[ "$splitted" =~ "%H" ]] && echo "$splitted" | sed -E 's/%H/'"$coin"'/g'
-
-    # to merge lines into one: | tr '\n' '\0'
-    echo "$splitted" | tr '\n' '\0'
-}
-
 get_as_one_line_defaults() {
     n=1000 # to get n coins from table to parse
     T='T'  # text only, no ANSI sequences
@@ -122,7 +110,6 @@ get_as_one_line_defaults() {
 
 get_as_one_line() {
     multiline="$1"
-    #splitted=$(echo "$format" | sed -E 's/(%.)/\n\1\n/g')
     IFS=',' read -ra array <<< "$oneliner"
     for name in "${array[@]}"; do
         foundline=$(echo "$multiline" | tail -n +13 | grep -Fiw "$name" | sed 's/│ //g')
