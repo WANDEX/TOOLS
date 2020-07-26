@@ -1,6 +1,8 @@
 #!/bin/sh
 # get average crypto exchange rate for last ~5 min
 
+CACHE="$CSCRDIR"'/rate'
+
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
@@ -33,7 +35,6 @@ get_opt() {
     LONG=awkformat:,convert:,coins,currencies,delimiter:,exchange:,format:,help,help-full,number:,output:,test,text
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
-    n=10
     exchange="usd"
     awkformat="%3.1f"
     format="%c:%p"
@@ -111,10 +112,12 @@ get_opt() {
 
 get_opt "$@"
 
-get_form_out_defaults() {
+get_defaults() {
     # essential defaults in order to work
-    n=1000 # to get n coins from table to parse
-    T='T'  # text only, no ANSI sequences
+    num=1000 # to get n coins from table to parse
+    T='T'    # text only, no ANSI sequences
+}
+
 }
 
 get_form_out() {
@@ -143,12 +146,55 @@ get_form_out() {
     echo -e "$out"
 }
 
-[[ $output ]] && get_form_out_defaults
+
+get_date() {
+    if [ -f "$CACHE" ]; then
+        TABLE=$(cat "$CACHE")
+        date=$(date -d "$(tail -n 1 "$CACHE" | sed 's/ UTC//' | sed 's/'$(echo "[\033]\[37m[\033]\[2m")'//' | sed 's/'$(echo "[\033]\[0m")'//')" +%s --utc)
+        dateadd=$(echo "$date+305" | bc) # add N to date
+    fi
+}
+
+get_n_lines() {
+    multiline="$1"
+    sumn=$(echo "11+$n*2" | bc)
+    head=$(echo "$multiline" | head -n "$sumn")
+    time="$(date --date="@$date" +%R):loc. $(date --date="@$date" +%R --utc):UTC"
+    tail=$(echo "$multiline" | tail -n 1)
+    boxb=$(echo "└──────┴─────────┴─────────────┴───────────────┴───────────────┴──────────────────┴──────────────┘")
+    echo -e "$head""\n$boxb""\n$time""\n$tail"
+}
+
+do_curl() {
+    url="$1"
+    TABLE=$(curl -sf "$url")
+}
+
+upd_cache() {
+    url="$1"
+    # if date now > cached date + N -> curl and upd cache
+    if [[ $(date +%s --utc) -gt $dateadd ]]; then
+        do_curl "$url"
+        echo "$TABLE" > "$CACHE"
+        get_date
+        notify-send "rate srv sync:" "$(date --date="@$date" +%R):last $(date +%R):now"
+    fi
+}
+
+get_defaults
 BASE='https://'"$exchange"'.rate.sx/'"$special"
-FULL="$BASE?qF$T&n=$n"
-[[ $test ]] && echo "$FULL" && exit 0
+URL="$BASE?qF$T&n=$num"
+[[ $test ]] && echo "$URL" && exit 0
+get_date
+upd_cache "$URL"
 
-CURL=$(curl -sf "$FULL")
-
-[[ $output ]] && get_form_out "$CURL" || echo "$CURL"
+# main
+if [[ $output ]]; then
+    get_form_out "$TABLE"
+elif [[ $n ]]; then
+    get_n_lines "$TABLE"
+else
+    do_curl "$URL"
+    echo "$TABLE"
+fi
 
