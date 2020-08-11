@@ -1,0 +1,94 @@
+#!/bin/sh
+# show cryptocurrency price data via rate wrapper
+
+fold="[+]"
+
+# $1 is update signal, used to update dwmblocks
+SIG=$((34+$1))
+DELAY=0.5
+LIST="$CSCRDIR"'/rate_stat_coin_list'
+[ -f "$LIST" ] && CAT=$(cat "$LIST" | head -n 1)
+# if file is empty use default list of coins
+COIN_LIST="${CAT:-"BTC,ETH,BCH"}"
+
+price() { rate -o "$COIN_LIST" -f "%c:%p"; }
+ch24h() { rate -o "$COIN_LIST" -f "%c:%H"; }
+mcap()  { rate -o "$COIN_LIST" -f "%c:%m"; }
+
+array=(price ch24h mcap)
+array_len=${#array[@]}
+file="$CSCRDIR"'/rate_stat'
+current_element=$(cat "$file" | head -n 1)
+[[ -z $current_element ]] && current_element="price"
+new_elem="$current_element"
+
+next_elem() {
+    sleep $DELAY
+    for (( i=0; i<$array_len; i++ )); do
+        # find index of current element
+        if [[ "$current_element" == "${array[i]}" ]]; then
+            # if there is no next element, get first
+            if [[ -z "${array[$i+1]}" ]]; then
+                new_elem="${array[0]}"
+            else
+                new_elem="${array[$i+1]}"
+            fi
+        fi
+    done
+    # write new element to file
+    echo "$new_elem" > "$file"
+}
+
+prev_elem() {
+    sleep $DELAY
+    for (( i=$array_len; i>=0; i-- )); do
+        # find index of current element
+        if [[ "$current_element" == "${array[i]}" ]]; then
+            # if there is no previous element, get last
+            if [[ -z "${array[$i-1]}" ]]; then
+                new_elem="${array[-1]}"
+            else
+                new_elem="${array[$i-1]}"
+            fi
+        fi
+    done
+    # write new element to file
+    echo "$new_elem" > "$file"
+}
+
+# !!! unfinished !!!
+# maybe better to insert at beginning of the file?
+fold_elem() {
+    # toggle between fold/unfold
+    linesnum=$(cat "$file" | wc -l)
+    if [ "$linesnum" -ge 2 ]; then
+        sed '2d' "$file" # remove second line
+        #new_elem=$(cat "$file" | head -n 2)
+    else
+        new_elem="$fold"
+    fi
+    #if [[ "$current_element" != "$fold" ]]; then
+    #fi
+    # write new element to end of a file
+    echo "$new_elem" >> "$file"
+}
+
+case $BLOCK_BUTTON in
+        1) kill -$SIG $(pidof dwmblocks) ;;
+        2) fold_elem ; kill -$SIG $(pidof dwmblocks) ;;
+        4) prev_elem ; kill -$SIG $(pidof dwmblocks) ;;
+        5) next_elem ; kill -$SIG $(pidof dwmblocks) ;;
+        3) notify-send "💰crypto rate status module" "\- Shows my rate wrapper output
+- MMB fold/unfold $fold
+- Scroll to change between outputs." ;;
+	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+esac
+
+# exec function based on substring
+case "$new_elem" in
+    "price") price ;;
+    "ch24h") ch24h ;;
+    "mcap") mcap ;;
+    "$fold") fold_elem ;;
+esac
+

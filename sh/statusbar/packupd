@@ -1,0 +1,30 @@
+#!/bin/sh
+# show available pacman/aur updates
+# For this to work, have a `pacman -Sy` command run in the background as a
+# cronjob every so often as root. This script will then read those packages.
+# When clicked, it will run an upgrade via pacman.
+## as a memo
+# sudo crontab -e
+# 5 */2 * * * /usr/bin/pacman -Sy --noconfirm && kill -42 $(pidof dwmblocks)
+
+pacman=$(pacman -Qu | wc -l | awk '{print ""$1}')
+aur=$(yay --aur -Qu | wc -l | awk '{print "/"$1}')
+
+echo "$pacman""$aur"
+
+write_to_file() {
+    packupd_file="$CSCRDIR/non_live_packupd"
+    pacman -Qu > "$packupd_file"
+    echo -e "\nAUR PACKAGES:" >> "$packupd_file"
+    yay --aur -Qu >> "$packupd_file"
+}
+
+case $BLOCK_BUTTON in
+    1) write_to_file && setsid -f "$TERMINAL" -e less -Srf "$packupd_file" ;;
+    2) setsid -f "$TERMINAL" -e popupgrade ;;
+    3) notify-send "🎁 Upgrade module" "📦: number of upgradable packages
+- Left click to show upgradable packages
+- Middle click to upgrade packagen" ;;
+    6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+esac
+

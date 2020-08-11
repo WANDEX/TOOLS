@@ -7,12 +7,18 @@
 LOCATION="${1:-"$LOC0"}"
 weatherreport=$(curl -sf "https://wttr.in/$LOCATION")
 
+write_to_file() {
+    #forecast_file="$CSCRDIR/non_live_forecast"
+    forecast_file="$XDG_CACHE_HOME/cscripts/non_live_forecast" # temp delete, uncomment upper
+    echo "$weatherreport" > "$forecast_file"
+}
+
 case $BLOCK_BUTTON in
-	1) setsid -f "$TERMINAL" -e echo "$weatherreport" ;;
-	3) notify-send "🌈 Weather module" "\- Left click for full forecast.
+    1) write_to_file && setsid -f "$TERMINAL" -e less -Srf "$forecast_file" ;;
+    3) notify-send "🌈 Weather module" "\- Left click for full forecast.
 💧: Todays maximum probability of rain/snow
 Daily low - Daily high" ;;
-	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+    6) "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 
 oneliner=$(curl -sf "https://wttr.in/$LOCATION?format="%c_%f_%P_%o"")
