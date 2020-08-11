@@ -6,8 +6,8 @@ case $BLOCK_BUTTON in
 	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 
-FILE="$SCRIPTS/.temp/.switch_pulse_preset_status.sh"
-CURRENT_PRESET_NAME=$( "$FILE" | head -n 1 )
+FILE="$CSCRDIR"'/pulse_active_preset'
+CURRENT_PRESET_NAME=$( cat "$FILE" | head -n 1 )
 
 # substring in preset name
 case "$CURRENT_PRESET_NAME" in
