@@ -10,8 +10,8 @@ GENERAL OPTIONS
     -c, --convert   Convert and get sum of currencies, separated by (+/-) each
     -e, --exchange  Change exchange currency (default: usd)
     -n, --number    Number of currencies in a spreadsheet (default: 10)
-    -T, --text      Text only, no ANSI sequences
     -t, --test      Activate url preview test mode
+    -C, --color     Allow ANSI sequences for colored output, not only text data
 OUTPUT ONLY OPTIONS
     -a, --awkformat Format fields (awk printf feature)
     -d, --delimiter Delimiter to use between coins (man echo -e sequences sup.)
@@ -23,22 +23,31 @@ HELP
     -H, --help-full Display full help which obtained via curl
     --currencies    List of supported currencies with their full names
     --coins         List of supported cryptocurrencies with their full names
+    --debug         Show debug messages
 EXAMPLES
     $(basename $BASH_SOURCE) -c 1337usd -e eur
+    $(basename $BASH_SOURCE) 1337usd to eur
+    $(basename $BASH_SOURCE) 1337 usd in eur
+    - Above examples are equal and are valid.
     $(basename $BASH_SOURCE) -c 1BTC-10ETH+100LTC
     $(basename $BASH_SOURCE) -o btc,eth,bch -f "%c:%p[%H]" -d '\\\n' -a '%8.3f'
 EOF
 
-get_opt() {
-    # Parse and read OPTIONS command-line options
-    SHORT=a:c:d:e:f:hHn:o:tT
-    LONG=awkformat:,convert:,coins,currencies,delimiter:,exchange:,format:,help,help-full,number:,output:,test,text
-    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
-    # PLACE FOR OPTION DEFAULTS
+def_opt() {
     exchange="usd"
     awkformat="%3.1f"
     format="%c:%p"
     delimiter=" "
+    n_hardcoded_max=600 # current max available coins in table
+    color=0 # color mode 1=on
+    debug=0 # debug mode 1=on
+}
+
+get_opt() {
+    # Parse and read OPTIONS command-line options
+    SHORT=a:c:Cd:e:f:hHn:o:t
+    LONG=awkformat:,convert:,color,coins,currencies,debug,delimiter:,exchange:,format:,help,help-full,number:,output:,test
+    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
@@ -49,6 +58,9 @@ get_opt() {
         -c|--convert)
             shift
             special="$1"
+            ;;
+        -C|--color)
+            color=1
             ;;
         -d|--delimiter)
             shift
@@ -84,6 +96,7 @@ get_opt() {
                     ;;
                 *) n=$1 ;;
             esac
+            [ $n -gt $n_hardcoded_max ] && n=$n_hardcoded_max
             ;;
         -o|--output)
             shift
@@ -92,14 +105,14 @@ get_opt() {
         -t|--test)
             test=1
             ;;
-        -T|--text)
-            T='T'
-            ;;
         --coins)
             special=":coins"
             ;;
         --currencies)
             special=":currencies"
+            ;;
+        --debug)
+            debug=1
             ;;
         --)
             shift
@@ -110,14 +123,41 @@ get_opt() {
     done
 }
 
-get_opt "$@"
+parse_in() {
+    def_opt # PLACE FOR OPTION DEFAULTS
+    argarray=("$@")
+    argcount="${#argarray[@]}"
+    stringarray="${argarray[*]}"
+    # substring: if first arg starts without '-'...
+    if [[ "$stringarray" != -* && $argcount -eq 1 ]]; then
+            special="${argarray[0]}"
+            T='' # allow colored output
+    elif [[ "$stringarray" =~ " in " || "$stringarray" =~ " to " ]]; then
+        if [[ $argcount -eq 3 ]]; then
+            special="${argarray[0]}"
+            exchange="${argarray[2]}"
+        elif [[ $argcount -eq 4 ]]; then
+            special="${argarray[0]}${argarray[1]}"
+            exchange="${argarray[3]}"
+        else
+            echo "[$argcount]:args"
+            echo "I don't get it. exit"
+            exit 1
+        fi
+    else
+        get_opt "$@"
+    fi
+}
 
 get_defaults() {
     # essential defaults in order to work
-    num=1000 # to get n coins from table to parse
-    T='T'    # text only, no ANSI sequences
-}
-
+    if [[ $color -eq 1 ]]; then
+        num=${n:-10} # to get n coins or 10 default
+        T='' # allow colored output
+    else
+        num=$n_hardcoded_max # to get all coins from table to parse
+        T='T' # text only, no ANSI sequences
+    fi
 }
 
 get_form_out() {
@@ -146,12 +186,24 @@ get_form_out() {
     echo -e "$out"
 }
 
-
 get_date() {
     if [ -f "$CACHE" ]; then
         TABLE=$(cat "$CACHE")
-        date=$(date -d "$(tail -n 1 "$CACHE" | sed 's/ UTC//' | sed 's/'$(echo "[\033]\[37m[\033]\[2m")'//' | sed 's/'$(echo "[\033]\[0m")'//')" +%s --utc)
-        dateadd=$(echo "$date+305" | bc) # add N to date
+        tempd=$(tail -n 1 "$CACHE" | sed 's/ UTC//' | sed 's/'$(echo "[\033]\[37m[\033]\[2m")'//' | sed 's/'$(echo "[\033]\[0m")'//')
+        date=$(date --date="$tempd" +%s --utc)
+        dateadd=$(echo "$date+300" | bc) # add N to date
+        difference=$(echo "$dateadd-($(date +%s --utc))+1" | bc)
+        if [[ $difference -gt 0 ]]; then
+            if [[ $difference -lt 10 ]]; then
+                [ $debug -eq 1 ] && notify-send "rate - sleep to sync:" "$difference sec"
+                sleep $difference
+            elif [[ $difference -lt 299 ]]; then
+                [ $debug -eq 1 ] && notify-send "rate - sync difference:" "$difference sec"
+            fi
+        fi
+    else
+        echo -e "$CACHE\nDoes not exist, or not regular file -> exit."
+        exit 1
     fi
 }
 
@@ -159,9 +211,9 @@ get_n_lines() {
     multiline="$1"
     sumn=$(echo "11+$n*2" | bc)
     head=$(echo "$multiline" | head -n "$sumn")
-    time="$(date --date="@$date" +%R):loc. $(date --date="@$date" +%R --utc):UTC"
+    time="$(date --date=@"$date" +%R):loc. $(date --date=@"$date" +%R --utc):UTC"
+    boxb=$(echo "$multiline" | grep -F '┌─' | tr '┌' '└' | tr '┬' '┴' | tr '┐' '┘')
     tail=$(echo "$multiline" | tail -n 1)
-    boxb=$(echo "└──────┴─────────┴─────────────┴───────────────┴───────────────┴──────────────────┴──────────────┘")
     echo -e "$head""\n$boxb""\n$time""\n$tail"
 }
 
@@ -173,28 +225,38 @@ do_curl() {
 upd_cache() {
     url="$1"
     # if date now > cached date + N -> curl and upd cache
-    if [[ $(date +%s --utc) -gt $dateadd ]]; then
+    if [[ $(date +%s --utc) -gt $dateadd && $color -eq 0 ]]; then
         do_curl "$url"
-        echo "$TABLE" > "$CACHE"
+        # if last line is date UTC -> upd cache
+        if [[ $(echo "$TABLE" | tail -n 1) =~ [0-9]{4}(.[0-9][0-9]){5}.[0-9]+.UTC ]]; then
+            echo "$TABLE" > "$CACHE"
+        else
+            [ $debug -eq 1 ] && notify-send "last line of TABLE not date UTC"
+        fi
         get_date
-        notify-send "rate srv sync:" "$(date --date="@$date" +%R):last $(date +%R):now"
+        [ $debug -eq 1 ] && notify-send "rate srv sync:" "$(date --date=@"$date" +%R):last $(date +%R):now"
     fi
 }
 
-get_defaults
-BASE='https://'"$exchange"'.rate.sx/'"$special"
-URL="$BASE?qF$T&n=$num"
-[[ $test ]] && echo "$URL" && exit 0
-get_date
-upd_cache "$URL"
+main() {
+    parse_in "$@"
+    get_defaults
+    BASE='https://'"$exchange"'.rate.sx/'"$special"
+    URL="$BASE?qF$T&n=$num"
+    [[ $test ]] && echo "$URL" && exit 0
+    get_date
+    upd_cache "$URL"
 
-# main
-if [[ $output ]]; then
-    get_form_out "$TABLE"
-elif [[ $n ]]; then
-    get_n_lines "$TABLE"
-else
-    do_curl "$URL"
-    echo "$TABLE"
-fi
+    # main
+    if [[ $output ]]; then
+        get_form_out "$TABLE"
+    elif [[ $n && $color -eq 0 ]]; then
+        get_n_lines "$TABLE"
+    else
+        do_curl "$URL"
+        echo "$TABLE"
+    fi
+}
+
+main "$@"
 
