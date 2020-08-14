@@ -1,0 +1,6 @@
+#!/bin/sh
+# update cht.sh client from origin
+DEST="$SCRIPTS"'/sh/curl/cht'
+curl https://cht.sh/:cht.sh > "$DEST"
+chmod +x "$DEST"
+echo "UPD DONE! DEST=$DEST"
