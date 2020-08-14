@@ -131,7 +131,7 @@ parse_in() {
     # substring: if first arg starts without '-'...
     if [[ "$stringarray" != -* && $argcount -eq 1 ]]; then
             special="${argarray[0]}"
-            T='' # allow colored output
+            color=1 # allow colored output
     elif [[ "$stringarray" =~ " in " || "$stringarray" =~ " to " ]]; then
         if [[ $argcount -eq 3 ]]; then
             special="${argarray[0]}"
