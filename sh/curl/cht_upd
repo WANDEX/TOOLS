@@ -1,6 +1,8 @@
 #!/bin/sh
 # update cht.sh client from origin
 DEST="$SCRIPTS"'/sh/curl/cht'
+bash="$CHTSH"'/bash_completion'
 curl https://cht.sh/:cht.sh > "$DEST"
 chmod +x "$DEST"
+[ ! -f "$bash" ] && curl https://cheat.sh/:bash_completion > "$bash" && sed -i 's/cht.sh/cht/g' "$bash"
 echo "UPD DONE! DEST=$DEST"
