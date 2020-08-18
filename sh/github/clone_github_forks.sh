@@ -5,7 +5,7 @@ DIR="$FORKS"'/luke'
 mkdir -p "$DIR"
 cd "$DIR"
 git clone git@github.com:WANDEX/dmenu.git
-git clone git@github.com:WANDEX/dwm.git
+git clone git@github.com:WANDEX/dwm-fork.git
 git clone git@github.com:WANDEX/dwmblocks.git
 git clone git@github.com:WANDEX/st.git
 git clone git@github.com:WANDEX/voidrice.git
