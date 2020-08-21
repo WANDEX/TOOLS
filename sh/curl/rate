@@ -19,6 +19,7 @@ OUTPUT ONLY OPTIONS
     AWK printf format fields:
         --Ar price | --Ap price | --Ah change | --Am mcap
     -o, --output    Get multiple coins data separated via ',' as a delimiter
+        --Ec        Get colored emoji (unicode symbols) in ch24h & ch01h
 HELP
     -h, --help      Display help
     -H, --help-full Display full help which obtained via curl
@@ -43,6 +44,7 @@ def_opt() {
     format="%c:%p"
     delimiter=" "
     n_hardcoded_max=600 # current max available coins in table
+    Ec=0
     color=0 # color mode 1=on
     debug=0 # debug mode 1=on
 }
@@ -121,6 +123,9 @@ get_opt() {
             shift
             awkf_r="$1"
             ;;
+        --Ec)
+            Ec=1
+            ;;
         --coins)
             special=":coins"
             ;;
@@ -176,6 +181,79 @@ get_defaults() {
     fi
 }
 
+colored_change_emojis() {
+    ch01h="$1"
+    ch24h="$2"
+    upW='🟩'
+    dwW='🟥'
+    upH='🟢'
+    dwH='🔴'
+    upN='▲ '
+    dwN='▼ '
+    upL='△ '
+    dwL='▽ '
+    cW=20
+    cH=10
+    cN=5
+
+    # get only int number
+    _24h=$(echo "$ch24h" | sed "s/+//; s/-//; s/%//" | xargs printf "%.*f\n" "0")
+    _01h=$(echo "$ch01h" | sed "s/+//; s/-//; s/%//" | xargs printf "%.*f\n" "0")
+
+    # 24
+    if [[ $(($_24h)) -ge $cW ]]; then
+        if [[ "$ch24h" == +* ]]; then
+            ch24h=$(echo "$ch24h" | sed "s/+/$upW/g")
+        elif [[ "$ch24h" == -* ]]; then
+            ch24h=$(echo "$ch24h" | sed "s/-/$dwW/g")
+        fi
+    elif [[ $(($_24h)) -ge $cH ]]; then
+        if [[ "$ch24h" == +* ]]; then
+            ch24h=$(echo "$ch24h" | sed "s/+/$upH/g")
+        elif [[ "$ch24h" == -* ]]; then
+            ch24h=$(echo "$ch24h" | sed "s/-/$dwH/g")
+        fi
+    elif [[ $(($_24h)) -ge $cN ]]; then
+        if [[ "$ch24h" == +* ]]; then
+            ch24h=$(echo "$ch24h" | sed "s/+/$upN/g")
+        elif [[ "$ch24h" == -* ]]; then
+            ch24h=$(echo "$ch24h" | sed "s/-/$dwN/g")
+        fi
+    else
+        if [[ "$ch24h" == +* ]]; then
+            ch24h=$(echo "$ch24h" | sed "s/+/$upL/g")
+        elif [[ "$ch24h" == -* ]]; then
+            ch24h=$(echo "$ch24h" | sed "s/-/$dwL/g")
+        fi
+    fi
+    # 01
+    if [[ $(($_01h)) -ge $cW ]]; then
+        if [[ "$ch01h" == +* ]]; then
+            ch01h=$(echo "$ch01h" | sed "s/+/$upW/g")
+        elif [[ "$ch01h" == -* ]]; then
+            ch01h=$(echo "$ch01h" | sed "s/-/$dwW/g")
+        fi
+    elif [[ $(($_01h)) -ge $cH ]]; then
+        if [[ "$ch01h" == +* ]]; then
+            ch01h=$(echo "$ch01h" | sed "s/+/$upH/g")
+        elif [[ "$ch01h" == -* ]]; then
+            ch01h=$(echo "$ch01h" | sed "s/-/$dwH/g")
+        fi
+    elif [[ $(($_01h)) -ge $cN ]]; then
+        if [[ "$ch01h" == +* ]]; then
+            ch01h=$(echo "$ch01h" | sed "s/+/$upN/g")
+        elif [[ "$ch01h" == -* ]]; then
+            ch01h=$(echo "$ch01h" | sed "s/-/$dwN/g")
+        fi
+    else
+        if [[ "$ch01h" == +* ]]; then
+            ch01h=$(echo "$ch01h" | sed "s/+/$upL/g")
+        elif [[ "$ch01h" == -* ]]; then
+            ch01h=$(echo "$ch01h" | sed "s/-/$dwL/g")
+        fi
+    fi
+}
+
 get_form_out() {
     multiline="$1"
     IFS=',' read -ra array <<< "$output"
@@ -190,8 +268,15 @@ get_form_out() {
         mcap=$(echo "${mcap:0:$((${#mcap}-1))} ${mcap: -1}" | awk '{printf("'"$awkf_m"'%1s", $1, $2)}')
         spark=$(echo "$foundline" | awk '{print $7}')
 
+        # if not contains '-' -> add '+'
+        [[ "$ch24h" != -* ]] && ch24h='+'"$ch24h"
+        [[ "$ch01h" != -* ]] && ch01h='+'"$ch01h"
         ch24h=$(echo "$ch24h" | awk '{printf "'"$awkf_h"'%", $1}')
         ch01h=$(echo "$ch01h" | awk '{printf "'"$awkf_h"'%", $1}')
+
+        if [ $Ec -eq 1 ]; then
+            colored_change_emojis "$ch01h" "$ch24h"
+        fi
 
         frmt="$format"
         [[ "$format" =~ "%r" ]] && frmt=$(echo "$frmt" | sed -E 's/%r/'"$rank"'/g')
