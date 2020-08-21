@@ -13,10 +13,11 @@ GENERAL OPTIONS
     -t, --test      Activate url preview test mode
     -C, --color     Allow ANSI sequences for colored output, not only text data
 OUTPUT ONLY OPTIONS
-    -a, --awkformat Format fields (awk printf feature)
     -d, --delimiter Delimiter to use between coins (man echo -e sequences sup.)
     -f, --format    Format of output:
         %r rank | %c coin | %p price | %H ch24h | %h ch01h | %m mcap | %s spark
+    AWK printf format fields:
+        --Ar price | --Ap price | --Ah change | --Am mcap
     -o, --output    Get multiple coins data separated via ',' as a delimiter
 HELP
     -h, --help      Display help
@@ -34,8 +35,11 @@ EXAMPLES
 EOF
 
 def_opt() {
+    awkf_h="%-3s"
+    awkf_m="%3.0f"
+    awkf_p="%3.0f"
+    awkf_r="%2.0f"
     exchange="usd"
-    awkformat="%3.1f"
     format="%c:%p"
     delimiter=" "
     n_hardcoded_max=600 # current max available coins in table
@@ -45,16 +49,12 @@ def_opt() {
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=a:c:Cd:e:f:hHn:o:t
-    LONG=awkformat:,convert:,color,coins,currencies,debug,delimiter:,exchange:,format:,help,help-full,number:,output:,test
+    SHORT=c:Cd:e:f:hHn:o:t
+    LONG=Ah:,Am:,Ap:,Ar:,convert:,color,coins,currencies,debug,delimiter:,Ec,exchange:,format:,help,help-full,number:,output:,test
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
-        -a|--awkformat)
-            shift
-            awkformat="$1"
-            ;;
         -c|--convert)
             shift
             special="$1"
@@ -104,6 +104,22 @@ get_opt() {
             ;;
         -t|--test)
             test=1
+            ;;
+        --Ah)
+            shift
+            awkf_h="$1"
+            ;;
+        --Am)
+            shift
+            awkf_m="$1"
+            ;;
+        --Ap)
+            shift
+            awkf_p="$1"
+            ;;
+        --Ar)
+            shift
+            awkf_r="$1"
             ;;
         --coins)
             special=":coins"
@@ -165,13 +181,17 @@ get_form_out() {
     IFS=',' read -ra array <<< "$output"
     for name in "${array[@]}"; do
         foundline=$(echo "$multiline" | tail -n +13 | grep -Fiw "$name" | sed 's/│ //g')
-        rank=$(echo "$foundline" | awk '{print $1}')
+        rank=$(echo "$foundline" | awk '{print $1}' | awk '{printf "'"$awkf_r"'", $1}')
         coin=$(echo "$foundline" | awk '{print $2}')
-        price=$(echo "$foundline" | awk '{print $3}' | awk '{printf "'"$awkformat"'", $1}')
-        ch24h=$(echo "$foundline" | awk '{print $4}')
-        ch01h=$(echo "$foundline" | awk '{print $5}')
+        price=$(echo "$foundline" | awk '{print $3}' | awk '{printf "'"$awkf_p"'", $1}')
+        ch24h=$(echo "$foundline" | awk '{gsub("%",""); print $4}' | sed 's/[.].*$//')
+        ch01h=$(echo "$foundline" | awk '{gsub("%",""); print $5}' | sed 's/[.].*$//')
         mcap=$(echo "$foundline" | awk '{print $6}')
+        mcap=$(echo "${mcap:0:$((${#mcap}-1))} ${mcap: -1}" | awk '{printf("'"$awkf_m"'%1s", $1, $2)}')
         spark=$(echo "$foundline" | awk '{print $7}')
+
+        ch24h=$(echo "$ch24h" | awk '{printf "'"$awkf_h"'%", $1}')
+        ch01h=$(echo "$ch01h" | awk '{printf "'"$awkf_h"'%", $1}')
 
         frmt="$format"
         [[ "$format" =~ "%r" ]] && frmt=$(echo "$frmt" | sed -E 's/%r/'"$rank"'/g')
