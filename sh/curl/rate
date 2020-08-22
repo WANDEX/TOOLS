@@ -20,6 +20,7 @@ OUTPUT ONLY OPTIONS
         --Ar price | --Ap price | --Ah change | --Am mcap
     -o, --output    Get multiple coins data separated via ',' as a delimiter
         --Ec        Get colored emoji (unicode symbols) in ch24h & ch01h
+        --Mp        Min price string length as int value, format starts to apply
 HELP
     -h, --help      Display help
     -H, --help-full Display full help which obtained via curl
@@ -36,9 +37,10 @@ EXAMPLES
 EOF
 
 def_opt() {
-    awkf_h="%-3s"
+    mplen=3 # min price string length as int value
+    awkf_h="%3s"
     awkf_m="%3.0f"
-    awkf_p="%3.0f"
+    awkf_p='%.'"$mplen"'g'
     awkf_r="%2.0f"
     exchange="usd"
     format="%c:%p"
@@ -52,7 +54,7 @@ def_opt() {
 get_opt() {
     # Parse and read OPTIONS command-line options
     SHORT=c:Cd:e:f:hHn:o:t
-    LONG=Ah:,Am:,Ap:,Ar:,convert:,color,coins,currencies,debug,delimiter:,Ec,exchange:,format:,help,help-full,number:,output:,test
+    LONG=Ah:,Am:,Ap:,Ar:,convert:,color,coins,currencies,debug,delimiter:,Ec,exchange:,format:,help,help-full,Mp:,number:,output:,test
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     eval set -- "$OPTIONS"
     while true; do
@@ -125,6 +127,20 @@ get_opt() {
             ;;
         --Ec)
             Ec=1
+            ;;
+        --Mp)
+            shift
+            case $1 in
+                0*)
+                    printf "$1\n^ unsupported number! exit.\n"
+                    exit 1
+                    ;;
+                ''|*[!0-9]*)
+                    printf "$1\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    exit 1
+                    ;;
+                *) mplen=$1 ;;
+            esac
             ;;
         --coins)
             special=":coins"
@@ -261,7 +277,14 @@ get_form_out() {
         foundline=$(echo "$multiline" | tail -n +13 | grep -Fiw "$name" | sed 's/│ //g')
         rank=$(echo "$foundline" | awk '{print $1}' | awk '{printf "'"$awkf_r"'", $1}')
         coin=$(echo "$foundline" | awk '{print $2}')
-        price=$(echo "$foundline" | awk '{print $3}' | awk '{printf "'"$awkf_p"'", $1}')
+        price=$(echo "$foundline" | awk '{print $3}')
+        int_price=$(echo "$price" | sed 's/[.].*$//')
+        # if length <= min_length -> apply printf format
+        if [ ${#int_price} -le $mplen ]; then
+            price=$(echo "$price" | awk '{printf "'"$awkf_p"'", $1}')
+        else
+            price=$(echo "$price" | sed 's/[.].*$//')
+        fi
         ch24h=$(echo "$foundline" | awk '{gsub("%",""); print $4}' | sed 's/[.].*$//')
         ch01h=$(echo "$foundline" | awk '{gsub("%",""); print $5}' | sed 's/[.].*$//')
         mcap=$(echo "$foundline" | awk '{print $6}')
