@@ -288,7 +288,9 @@ get_form_out() {
         ch24h=$(echo "$foundline" | awk '{gsub("%",""); print $4}' | sed 's/[.].*$//')
         ch01h=$(echo "$foundline" | awk '{gsub("%",""); print $5}' | sed 's/[.].*$//')
         mcap=$(echo "$foundline" | awk '{print $6}')
-        mcap=$(echo "${mcap:0:$((${#mcap}-1))} ${mcap: -1}" | awk '{printf("'"$awkf_m"'%1s", $1, $2)}')
+        #mcap=$(echo "${mcap:0:$((${#mcap}-1))} ${mcap: -1}" | awk '{printf("'"$awkf_m"'%1s", $1, $2)}')
+        #mlen=$((${#mcap}-1)) # throw: substring expression < 0
+        mcap=$(echo "$mcap" | sed -E 's/([[:digit:]]+)(.$)/\1 \2/' | awk '{printf("'"$awkf_m"'%1s", $1, $2)}')
         spark=$(echo "$foundline" | awk '{print $7}')
 
         # if not contains '-' -> add '+'
