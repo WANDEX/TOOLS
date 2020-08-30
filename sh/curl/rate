@@ -1,6 +1,6 @@
 #!/bin/sh
 # get average crypto exchange rate for last ~5 min
-
+CSCRDIR="${CSCRDIR:-"$HOME"/.cache/cscripts}"
 CACHE="$CSCRDIR"'/rate'
 
 # read into variable using 'Here Document' code block
