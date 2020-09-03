@@ -1,0 +1,127 @@
+#!/bin/sh
+# rate script to get sorted by column N items length output
+
+CSCRDIR="${CSCRDIR:-"$HOME"/.cache/cscripts}"
+RATE_FORM="$CSCRDIR"'/rate_form'
+
+# read into variable using 'Here Document' code block
+read -d '' USAGE <<- EOF
+Usage: $(basename $BASH_SOURCE) [OPTION...]
+OPTIONS
+    -a, --ascending     Sort list in a ascending manner
+    -c, --column        Sort by: 1-name 2-price 3-c24h 4-c01h 5-mcap 6-rank
+    -d, --descending    Sort list in a descending manner
+    -h, --help          Display help
+    -n, --number        Number of coins in list
+    --debug             Debug of sort command
+EOF
+
+get_opt() {
+    # Parse and read OPTIONS command-line options
+    SHORT=ac:dhn:
+    LONG=ascending,colnum:,descending,debug,help,number:
+    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
+    # PLACE FOR OPTION DEFAULTS
+    num=10
+    num_total=$(cat "$RATE_FORM" | wc -l)
+    eval set -- "$OPTIONS"
+    while true; do
+        case "$1" in
+        -a|--ascending)
+            ascending=1
+            ;;
+        -c|--colnum)
+            shift
+            case $1 in
+                0*)
+                    printf "$1\n^ unsupported number! exit.\n"
+                    exit 1
+                    ;;
+                ''|*[!0-9]*)
+                    printf "$1\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    exit 1
+                    ;;
+                *) colnum=$1 ;;
+            esac
+            ;;
+        -d|--descending)
+            descending=1
+            ;;
+        -h|--help)
+            echo "$USAGE"
+            exit 0
+            ;;
+        -n|--number)
+            shift
+            case $1 in
+                0*)
+                    printf "$1\n^ unsupported number! exit.\n"
+                    exit 1
+                    ;;
+                ''|*[!0-9]*)
+                    printf "$1\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    exit 1
+                    ;;
+                *) num=$1 ;;
+            esac
+            [ $num -gt $num_total ] && num=$num_total
+            ;;
+        --debug)
+            debug=( --debug )
+            ;;
+        --)
+            shift
+            break
+            ;;
+        esac
+        shift
+    done
+}
+
+get_opt "$@"
+
+sort_cmd() {
+    case "$colnum" in
+        1) sort -k1${sr[@]} ${debug[@]} "$RATE_FORM";;
+        2) sort -k2n${sr[@]} ${debug[@]} "$RATE_FORM";;
+        3) sort -k3bg${sr[@]} -k4bg${sr[@]} ${debug[@]} "$RATE_FORM";;
+        4) sort -k4bg${sr[@]} -k3bg${sr[@]} ${debug[@]} "$RATE_FORM";;
+        5) sort -k6n${sr[@]} ${debug[@]} "$RATE_FORM";;
+        6) sort -k6n${sr[@]} ${debug[@]} "$RATE_FORM";;
+        *) echo "there is no such column with number:$colnum exit." && exit 1;;
+    esac
+}
+
+ascend() {
+    data=$(sort_cmd)
+    echo "$data"
+}
+
+descend() {
+    sr=(r)
+    data=$(sort_cmd)
+    echo "$data"
+}
+
+sort_list() {
+    if [ -z "$colnum" ]; then
+        echo "the column number is required for sorting by ... exit."
+        exit 1
+    fi
+    if [[ $ascending -eq 1 ]]; then
+        ascend
+    elif [[ $descending -eq 1 ]]; then
+        descend
+    else
+        # descending order by default
+        descend
+    fi
+}
+
+main() {
+    DATA=$(sort_list)
+    echo "$DATA" | head -n $num
+}
+
+main "$@"
+

@@ -1,0 +1,13 @@
+#!/bin/sh
+# script to get a list of all available coin names
+# it exist because rate --coins gives obsolete list of coins
+# which gives less data then regular rate command. NOT rate WRAPPER FAULT!
+
+CSCRDIR="${CSCRDIR:-"$HOME"/.cache/cscripts}"
+RAW=$(cat "$CSCRDIR/rate")
+
+DATA=$(echo "$RAW" | tail -n +13 | head -n -2)
+DATA=$(echo "$DATA" | sed '/├─/d' | awk '{print $4}')
+
+echo "$DATA"
+

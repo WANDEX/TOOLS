@@ -1,0 +1,33 @@
+#!/bin/sh
+# script for cronjob to make simplified rate preformatted output by columns
+## using rate_coin_names
+# it exist because rate --coins gives obsolete list of coins
+# which gives less data then regular rate command. NOT rate WRAPPER FAULT!
+
+CSCRDIR="${CSCRDIR:-"$HOME"/.cache/cscripts}"
+SCRIPTS="${SCRIPTS:-"$HOME"/source/scripts}"
+RATE_CACHE="$CSCRDIR"'/rate'
+RATE_FORM="$CSCRDIR"'/rate_form'
+RATE_NAMES="$SCRIPTS"'/sh/rate/rate_coin_names'
+RATE_WRAPPER="$SCRIPTS"'/sh/curl/rate'
+
+get_coins_data() {
+    "$RATE_WRAPPER" -f '%c\t%p\t%H\t%h\t%m\t%r' -o "$1" -d '\n'
+}
+
+[[ $2 == debug ]] && debug=1 || debug=0
+
+if [[ $(date +%s --utc -r "$RATE_CACHE") -ge $(date +%s --utc -r "$RATE_FORM") || $debug -eq 1 ]]; then
+    FULL_ARRAY=($("$RATE_NAMES" | tr '\n' ' '))
+    NUM=${1:-${#FULL_ARRAY[@]}}
+    CRYPTO_LIST=$(echo "${FULL_ARRAY[@]}" | tr ' ' ',' | cut -d "," -f -$NUM)
+    DATA=$(get_coins_data "$CRYPTO_LIST")
+    if [ $debug -eq 0 ]; then
+        echo "$DATA" > "$RATE_FORM"
+        FRMT=$(column -R 3,4,5 -t "$RATE_FORM")
+        echo "$FRMT" > "$RATE_FORM"
+    elif [ $debug -eq 1 ]; then
+        echo "$DATA"
+    fi
+fi
+
