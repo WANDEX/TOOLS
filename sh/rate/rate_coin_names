@@ -4,7 +4,7 @@
 # which gives less data then regular rate command. NOT rate WRAPPER FAULT!
 
 CSCRDIR="${CSCRDIR:-"$HOME"/.cache/cscripts}"
-RAW=$(cat "$CSCRDIR/rate")
+RAW=$(cat "$CSCRDIR/rate/rate")
 
 DATA=$(echo "$RAW" | tail -n +13 | head -n -2)
 DATA=$(echo "$DATA" | sed '/├─/d' | awk '{print $4}')

@@ -5,8 +5,10 @@ fold="[+]rate"
 
 # $1 is update signal, used to update dwmblocks
 SIG=$((34+$1))
+# $2 is a postfix after the LIST name
+POSTFIX="${2:-"_0"}"
 DELAY=0.5
-LIST="$CSCRDIR"'/rate_stat_coin_list'
+LIST="$CSCRDIR"'/rate/rate_stat_coin_list'"$POSTFIX"
 [ -f "$LIST" ] && CAT=$(cat "$LIST" | head -n 1)
 # if file is empty use default list of coins
 COIN_LIST="${CAT:-"BTC,ETH,BCH"}"
@@ -18,7 +20,7 @@ fold()  { echo "$fold"; }
 
 array=(price ch24h mcap)
 array_len=${#array[@]}
-file="$CSCRDIR"'/rate_stat'
+file="$CSCRDIR"'/rate/rate_stat'"$POSTFIX"
 current_element=$(cat "$file" | tail -n 1)
 [[ -z $current_element ]] && current_element="price"
 new_elem="$current_element"

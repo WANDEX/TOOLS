@@ -6,8 +6,8 @@
 
 CSCRDIR="${CSCRDIR:-"$HOME"/.cache/cscripts}"
 SCRIPTS="${SCRIPTS:-"$HOME"/source/scripts}"
-RATE_CACHE="$CSCRDIR"'/rate'
-RATE_FORM="$CSCRDIR"'/rate_form'
+RATE_CACHE="$CSCRDIR"'/rate/rate'
+RATE_FORM="$CSCRDIR"'/rate/rate_form'
 RATE_NAMES="$SCRIPTS"'/sh/rate/rate_coin_names'
 RATE_WRAPPER="$SCRIPTS"'/sh/curl/rate'
 

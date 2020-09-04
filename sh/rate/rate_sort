@@ -2,7 +2,7 @@
 # rate script to get sorted by column N items length output
 
 CSCRDIR="${CSCRDIR:-"$HOME"/.cache/cscripts}"
-RATE_FORM="$CSCRDIR"'/rate_form'
+RATE_FORM="$CSCRDIR"'/rate/rate_form'
 
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
