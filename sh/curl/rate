@@ -16,8 +16,8 @@ OUTPUT ONLY OPTIONS
     -d, --delimiter Delimiter to use between coins (man echo -e sequences sup.)
     -f, --format    Format of output:
         %r rank | %c coin | %p price | %H ch24h | %h ch01h | %m mcap | %s spark
-    AWK printf format fields:
-        --Ar price | --Ap price | --Ah change | --Am mcap
+    printf format of fields:
+        --Pr rank | --Pp price | --Ph change | --Pm mcap
     -o, --output    Get multiple coins data separated via ',' as a delimiter
         --Ec        Get colored emoji (unicode symbols) in ch24h & ch01h
         --Mp        Min price string length as int value, format starts to apply
@@ -38,10 +38,10 @@ EOF
 
 def_opt() {
     mplen=3 # min price string length as int value
-    awkf_h="%3s"
-    awkf_m="%3.0f"
-    awkf_p='%.'"$mplen"'g'
-    awkf_r="%2.0f"
+    printf_h="%2s"
+    printf_m="%3.0f"
+    printf_p='%.'"$mplen"'g'
+    printf_r="%2.0f"
     exchange="usd"
     format="%c:%p"
     delimiter=" "
@@ -54,7 +54,7 @@ def_opt() {
 get_opt() {
     # Parse and read OPTIONS command-line options
     SHORT=c:Cd:e:f:hHn:o:t
-    LONG=Ah:,Am:,Ap:,Ar:,convert:,color,coins,currencies,debug,delimiter:,Ec,exchange:,format:,help,help-full,Mp:,number:,output:,test
+    LONG=convert:,color,coins,currencies,debug,delimiter:,Ec,exchange:,format:,help,help-full,Mp:,number:,output:,Ph:,Pm:,Pp:,Pr:,test
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     eval set -- "$OPTIONS"
     while true; do
@@ -109,21 +109,21 @@ get_opt() {
         -t|--test)
             test=1
             ;;
-        --Ah)
+        --Ph)
             shift
-            awkf_h="$1"
+            printf_h="$1"
             ;;
-        --Am)
+        --Pm)
             shift
-            awkf_m="$1"
+            printf_m="$1"
             ;;
-        --Ap)
+        --Pp)
             shift
-            awkf_p="$1"
+            printf_p="$1"
             ;;
-        --Ar)
+        --Pr)
             shift
-            awkf_r="$1"
+            printf_r="$1"
             ;;
         --Ec)
             Ec=1
@@ -275,29 +275,28 @@ get_form_out() {
     IFS=',' read -ra array <<< "$output"
     for name in "${array[@]}"; do
         foundline=$(echo "$multiline" | tail -n +13 | grep -Fiw "$name" | sed 's/│ //g')
-        rank=$(echo "$foundline" | awk '{print $1}' | awk '{printf "'"$awkf_r"'", $1}')
+        rank=$(echo "$foundline" | awk '{print $1}' | awk '{printf "'"$printf_r"'", $1}')
         coin=$(echo "$foundline" | awk '{print $2}')
         price=$(echo "$foundline" | awk '{print $3}')
         int_price=$(echo "$price" | sed 's/[.].*$//')
         # if length <= min_length -> apply printf format
         if [ ${#int_price} -le $mplen ]; then
-            price=$(echo "$price" | awk '{printf "'"$awkf_p"'", $1}')
+            price=$(echo "$price" | awk '{printf "'"$printf_p"'", $1}')
         else
             price=$(echo "$price" | sed 's/[.].*$//')
         fi
         ch24h=$(echo "$foundline" | awk '{gsub("%",""); print $4}' | sed 's/[.].*$//')
         ch01h=$(echo "$foundline" | awk '{gsub("%",""); print $5}' | sed 's/[.].*$//')
         mcap=$(echo "$foundline" | awk '{print $6}')
-        #mcap=$(echo "${mcap:0:$((${#mcap}-1))} ${mcap: -1}" | awk '{printf("'"$awkf_m"'%1s", $1, $2)}')
-        #mlen=$((${#mcap}-1)) # throw: substring expression < 0
-        mcap=$(echo "$mcap" | sed -E 's/([[:digit:]]+)(.$)/\1 \2/' | awk '{printf("'"$awkf_m"'%1s", $1, $2)}')
+        mcap=$(echo "$mcap" | sed -E 's/([[:digit:]]+)(.$)/\1 \2/' | awk '{printf("'"$printf_m"'%1s", $1, $2)}')
         spark=$(echo "$foundline" | awk '{print $7}')
 
         # if not contains '-' -> add '+'
         [[ "$ch24h" != -* ]] && ch24h='+'"$ch24h"
         [[ "$ch01h" != -* ]] && ch01h='+'"$ch01h"
-        ch24h=$(echo "$ch24h" | awk '{printf "'"$awkf_h"'%", $1}')
-        ch01h=$(echo "$ch01h" | awk '{printf "'"$awkf_h"'%", $1}')
+
+        ch24h=$(printf "$printf_h" "$ch24h")
+        ch01h=$(printf "$printf_h" "$ch01h")
 
         if [ $Ec -eq 1 ]; then
             colored_change_emojis "$ch01h" "$ch24h"
