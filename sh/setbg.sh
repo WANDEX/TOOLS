@@ -1,6 +1,6 @@
 #!/bin/sh
 DEST_PATH="$HOME"'/.config/wallpaper.jpg'
-CACHE="$HOME"'/.cache/setbg'
+CACHE="$CSCRDIR"'/setbg'
 C_XARGS=$(cat "$CACHE" | awk 'NR==1')
 C_MARGS=$(cat "$CACHE" | awk 'NR==2')
 
