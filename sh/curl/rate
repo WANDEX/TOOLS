@@ -9,6 +9,7 @@ Usage: $(basename $BASH_SOURCE) [OPTION...]
 GENERAL OPTIONS
     -c, --convert   Convert and get sum of currencies, separated by (+/-) each
     -e, --exchange  Change exchange currency (default: usd)
+    -k, --insecure  Use curl option (by default https is used without -k option)
     -n, --number    Number of currencies in a spreadsheet (default: 10)
     -t, --test      Activate url preview test mode
     -C, --color     Allow ANSI sequences for colored output, not only text data
@@ -53,8 +54,8 @@ def_opt() {
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=c:Cd:e:f:hHn:o:t
-    LONG=convert:,color,coins,currencies,debug,delimiter:,Ec,exchange:,format:,help,help-full,Mp:,number:,output:,Ph:,Pm:,Pp:,Pr:,test
+    SHORT=c:Cd:e:kf:hHn:o:t
+    LONG=convert:,color,coins,currencies,debug,delimiter:,Ec,exchange:,format:,help,insecure,help-full,Mp:,number:,output:,Ph:,Pm:,Pp:,Pr:,test
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     eval set -- "$OPTIONS"
     while true; do
@@ -73,6 +74,9 @@ get_opt() {
         -e|--exchange)
             shift
             exchange="$1"
+            ;;
+        -k|--insecure)
+            insecure=( --insecure )
             ;;
         -f|--format)
             shift
@@ -348,7 +352,7 @@ get_n_lines() {
 
 do_curl() {
     url="$1"
-    TABLE=$(curl -sf "$url")
+    TABLE=$(curl -sf "${insecure[@]}" "$url")
 }
 
 upd_cache() {
