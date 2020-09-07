@@ -1,0 +1,4 @@
+#!/bin/sh
+# generate qr code based on input text
+curl 'https://qrenco.de/'"${*}"
+
