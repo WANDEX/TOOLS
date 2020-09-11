@@ -1,0 +1,7 @@
+#!/bin/sh
+# wget all accepted files
+accepted=${2:-""}
+[ -z "$accepted" ] && echo "[\$2] accepted files filter is empty... exit." && exit 1
+wget --no-config -r -l1 --no-parent -A"$accepted" "$1"
+
+
