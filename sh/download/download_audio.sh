@@ -31,6 +31,7 @@ get_opt() {
         -e|--end)
             shift
             case $1 in
+                -1) END=-1 ;; # get full playlist
                 0*)
                     printf "($1)\n^ unsupported number! exit.\n"
                     exit 1
