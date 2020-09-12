@@ -1,5 +1,5 @@
 #!/bin/sh
 # curl html as simple text
 # sed 's/\xc2\xa0/ /g' # Removing NBSPs
-curl -s "$1" | sed 's/<\/*[^>]*>/ /g; s/&nbsp;/ /g' | column -t
+curl -s "$1" | sed 's/<\/*[^>]*>/ /g; s/&nbsp;/ /g'
 
