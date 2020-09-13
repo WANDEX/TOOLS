@@ -2,35 +2,107 @@
 # module that gets top 10(N) cryptocurrencies by highest 24h change, and shows
 # data for each, scrolling them automatically N sec each.
 
-FILE="$CSCRDIR"'/rate/rate_form'
-n=10
-ch=${1:-"24"} #get ch01h or ch24h change
-sec=${2:-3} # sleep time between printing lines
-def_columns="c,p,H,h,m,r" # list of column names
-del_columns="p,m,r" # list of columns to delete
+RATE_FORM="$CSCRDIR"'/rate/rate_form'
 
-ch24h() { rate_sort -dn $n -c 3; }
-ch01h() { rate_sort -dn $n -c 4; }
+# read into variable using 'Here Document' code block
+read -d '' USAGE <<- EOF
+Usage: $(basename $BASH_SOURCE) [OPTION...]
+OPTIONS
+    -h, --help          Display help
+RATE_SORT OPTIONS
+    -a, --ascending     Sort list in a ascending manner
+    -c, --column        Sort by: 1-name 2-price 3-c24h 4-c01h 5-mcap 6-rank
+    -d, --descending    Sort list in a descending manner
+    -n, --number        Number of coins in list
+EOF
 
-# substring
-case "$ch" in
-    *"24"*)
-        MULTILINE=$(ch24h)
-    ;;
-    *"01"*|"1")
-        MULTILINE=$(ch01h)
-    ;;
-    *)
-        MULTILINE=$(ch24h)
-    ;;
-esac
+get_opt() {
+    # Parse and read OPTIONS command-line options
+    SHORT=ac:dhn:
+    LONG=ascending,colnum:,descending,help,number:
+    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
+    # PLACE FOR OPTION DEFAULTS
+    def_columns="c,p,H,h,m,r" # list of column names
+    del_columns="p,m,r"       # list of columns to delete
+    num=10
+    num_total=$(cat "$RATE_FORM" | wc -l)
+    sec=3 # sleep time between printing lines
+    eval set -- "$OPTIONS"
+    while true; do
+        case "$1" in
+        -a|--ascending)
+            ascending=1
+            ;;
+        -c|--colnum)
+            shift
+            case $1 in
+                0*)
+                    printf "$1\n^ unsupported number! exit.\n"
+                    exit 1
+                    ;;
+                ''|*[!0-9]*)
+                    printf "$1\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    exit 1
+                    ;;
+                *) colnum=$1 ;;
+            esac
+            ;;
+        -d|--descending)
+            descending=1
+            ;;
+        -h|--help)
+            echo "$USAGE"
+            exit 0
+            ;;
+        -n|--number)
+            shift
+            case $1 in
+                0*)
+                    printf "$1\n^ unsupported number! exit.\n"
+                    exit 1
+                    ;;
+                ''|*[!0-9]*)
+                    printf "$1\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    exit 1
+                    ;;
+                *) num=$1 ;;
+            esac
+            [ $num -gt $num_total ] && num=$num_total
+            ;;
+        --)
+            shift
+            break
+            ;;
+        esac
+        shift
+    done
+}
+
+sort_list() {
+    if [ -z "$colnum" ]; then
+        echo "the column number is required for sorting by ... exit."
+        exit 1
+    fi
+    if [[ $ascending -eq 1 ]]; then
+        ad=(-a)
+    elif [[ $descending -eq 1 ]]; then
+        ad=(-d)
+    else
+        # descending order by default
+        ad=(-d)
+    fi
+}
+
+get_opt "$@"
+sort_list
+
+MULTILINE=$(rate_sort -c $colnum -n $num ${ad[@]})
 
 # hide unspecified columns
 MULTILINE=$(echo "$MULTILINE" | column -t -dN "$def_columns" -H "$del_columns")
 MAXLWIDTH=$(echo "$MULTILINE" | wc --max-line-length)
 CENSOR='XXXXXXXXXXXXXXXXXXXXXXXXXX'
 while read line; do
-    #echo -ne "$CENSOR\r\033[K$line" # almost ok
     # delete/replace previous line and use $MAXLWIDTH string format
     printf '%s\r\033[K%'"$MAXLWIDTH"'s' "$CENSOR", "$line"
     sleep $sec
