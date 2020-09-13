@@ -1,0 +1,38 @@
+#!/bin/sh
+# module that gets top 10(N) cryptocurrencies by highest 24h change, and shows
+# data for each, scrolling them automatically N sec each.
+
+FILE="$CSCRDIR"'/rate/rate_form'
+n=10
+ch=${1:-"24"} #get ch01h or ch24h change
+sec=${2:-3} # sleep time between printing lines
+def_columns="c,p,H,h,m,r" # list of column names
+del_columns="p,m,r" # list of columns to delete
+
+ch24h() { rate_sort -dn $n -c 3; }
+ch01h() { rate_sort -dn $n -c 4; }
+
+# substring
+case "$ch" in
+    *"24"*)
+        MULTILINE=$(ch24h)
+    ;;
+    *"01"*|"1")
+        MULTILINE=$(ch01h)
+    ;;
+    *)
+        MULTILINE=$(ch24h)
+    ;;
+esac
+
+# hide unspecified columns
+MULTILINE=$(echo "$MULTILINE" | column -t -dN "$def_columns" -H "$del_columns")
+MAXLWIDTH=$(echo "$MULTILINE" | wc --max-line-length)
+CENSOR='XXXXXXXXXXXXXXXXXXXXXXXXXX'
+while read line; do
+    #echo -ne "$CENSOR\r\033[K$line" # almost ok
+    # delete/replace previous line and use $MAXLWIDTH string format
+    printf '%s\r\033[K%'"$MAXLWIDTH"'s' "$CENSOR", "$line"
+    sleep $sec
+done <<< "$MULTILINE"
+
