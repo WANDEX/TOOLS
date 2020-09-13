@@ -1,6 +1,6 @@
 #!/bin/sh
-# module that gets top 10(N) cryptocurrencies by highest 24h change, and shows
-# data for each, scrolling them automatically N sec each.
+# module that gets top N cryptocurrencies by highest change of colnum, and shows
+# data for each, scrolling them automatically with N sleep time between each.
 
 RATE_FORM="$CSCRDIR"'/rate/rate_form'
 
@@ -8,25 +8,23 @@ RATE_FORM="$CSCRDIR"'/rate/rate_form'
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
+    -e, --exclude       Comma separated list of the column names to exclude:
+                        'c,p,H,h,m,r' - full list of awailable column names
     -h, --help          Display help
-RATE_SORT OPTIONS
-    -a, --ascending     Sort list in a ascending manner
-    -c, --column        Sort by: 1-name 2-price 3-c24h 4-c01h 5-mcap 6-rank
-    -d, --descending    Sort list in a descending manner
-    -n, --number        Number of coins in list
+    -s, --slp           Sleep time between printing coin data
 EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=ac:dhn:
-    LONG=ascending,colnum:,descending,help,number:
+    SHORT=ac:de:hn:s:
+    LONG=ascending,colnum:,descending,exclude:,help,number:,slp:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     def_columns="c,p,H,h,m,r" # list of column names
     del_columns="p,m,r"       # list of columns to delete
     num=10
     num_total=$(cat "$RATE_FORM" | wc -l)
-    sec=3 # sleep time between printing lines
+    slp=3 # sleep time between printing lines
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
@@ -50,8 +48,14 @@ get_opt() {
         -d|--descending)
             descending=1
             ;;
+        -e|--exclude)
+            shift
+            del_columns="$1"
+            ;;
         -h|--help)
             echo "$USAGE"
+            rate_sort --help | sed "s/OPTIONS/RATE_SORT OPTIONS/;
+                                    /Usage:/d; /--help/d; /--debug/d;"
             exit 0
             ;;
         -n|--number)
@@ -68,6 +72,10 @@ get_opt() {
                 *) num=$1 ;;
             esac
             [ $num -gt $num_total ] && num=$num_total
+            ;;
+        -s|--slp)
+            shift
+            slp=$1
             ;;
         --)
             shift
@@ -105,6 +113,6 @@ CENSOR='XXXXXXXXXXXXXXXXXXXXXXXXXX'
 while read line; do
     # delete/replace previous line and use $MAXLWIDTH string format
     printf '%s\r\033[K%'"$MAXLWIDTH"'s' "$CENSOR", "$line"
-    sleep $sec
+    sleep $slp
 done <<< "$MULTILINE"
 
