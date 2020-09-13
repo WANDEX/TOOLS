@@ -9,7 +9,7 @@ read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
     -a, --ascending     Sort list in a ascending manner
-    -c, --column        Sort by: 1-name 2-price 3-c24h 4-c01h 5-mcap 6-rank
+    -c, --colnum        Sort by: 1-name 2-price 3-c24h 4-c01h 5-mcap 6-rank
     -d, --descending    Sort list in a descending manner
     -h, --help          Display help
     -n, --number        Number of coins in list
