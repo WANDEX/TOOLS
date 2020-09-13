@@ -34,7 +34,7 @@ EXAMPLES
     $(basename $BASH_SOURCE) 1337 usd in eur
     - Above examples are equal and are valid.
     $(basename $BASH_SOURCE) -c 1BTC-10ETH+100LTC
-    $(basename $BASH_SOURCE) -o btc,eth,bch -f "%c:%p[%H]" -d '\\\n' -a '%8.3f'
+    $(basename $BASH_SOURCE) -o btc,eth,bch -f "%c:%p[%H]" -d '\\\n'
 EOF
 
 def_opt() {
