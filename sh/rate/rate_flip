@@ -17,7 +17,7 @@ EOF
 get_opt() {
     # Parse and read OPTIONS command-line options
     SHORT=ac:de:hn:p:s:
-    LONG=ascending,colnum:,descending,exclude:,help,number:,prefix:,slp:
+    LONG=ascending,bot:,colnum:,descending,exclude:,help,number:,prefix:,slp:,top:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     def_columns="c,p,H,h,m,r" # list of column names
@@ -82,6 +82,14 @@ get_opt() {
             shift
             slp=$1
             ;;
+        --bot)
+            shift
+            bot=(--bot $1)
+            ;;
+        --top)
+            shift
+            top=(--top $1)
+            ;;
         --)
             shift
             break
@@ -107,7 +115,7 @@ sort_list() {
 }
 
 main() {
-    MULTILINE=$(rate_sort -c $colnum -n $num ${ad[@]})
+    MULTILINE=$(rate_sort -c $colnum -n $num ${top[@]} ${bot[@]} ${ad[@]})
     # hide unspecified columns
     MULTILINE=$(echo "$MULTILINE" | column -t -dN "$def_columns" -H "$del_columns")
     MAXLWIDTH=$(echo "$MULTILINE" | wc --max-line-length)
