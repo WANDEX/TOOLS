@@ -16,14 +16,15 @@ EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=ac:de:hn:s:
-    LONG=ascending,colnum:,descending,exclude:,help,number:,slp:
+    SHORT=ac:de:hn:p:s:
+    LONG=ascending,colnum:,descending,exclude:,help,number:,prefix:,slp:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     def_columns="c,p,H,h,m,r" # list of column names
     del_columns="p,m,r"       # list of columns to delete
     num=10
     num_total=$(cat "$RATE_FORM" | wc -l)
+    prefix=""
     slp=3 # sleep time between printing lines
     eval set -- "$OPTIONS"
     while true; do
@@ -73,6 +74,10 @@ get_opt() {
             esac
             [ $num -gt $num_total ] && num=$num_total
             ;;
+        -p|--prefix)
+            shift
+            prefix="$1"
+            ;;
         -s|--slp)
             shift
             slp=$1
@@ -101,18 +106,21 @@ sort_list() {
     fi
 }
 
+main() {
+    MULTILINE=$(rate_sort -c $colnum -n $num ${ad[@]})
+    # hide unspecified columns
+    MULTILINE=$(echo "$MULTILINE" | column -t -dN "$def_columns" -H "$del_columns")
+    MAXLWIDTH=$(echo "$MULTILINE" | wc --max-line-length)
+    CENSOR=$(printf %"$MAXLWIDTH"s | tr " " "X") # print X till max line length
+    while read line; do
+        # delete/replace previous line and use $MAXLWIDTH string format
+        printf '%s\r\033[K%s%'"$MAXLWIDTH"'s' "$CENSOR" "$prefix" "$line"
+        sleep $slp
+    done <<< "$MULTILINE"
+}
+
 get_opt "$@"
 sort_list
 
-MULTILINE=$(rate_sort -c $colnum -n $num ${ad[@]})
-
-# hide unspecified columns
-MULTILINE=$(echo "$MULTILINE" | column -t -dN "$def_columns" -H "$del_columns")
-MAXLWIDTH=$(echo "$MULTILINE" | wc --max-line-length)
-CENSOR='XXXXXXXXXXXXXXXXXXXXXXXXXX'
-while read line; do
-    # delete/replace previous line and use $MAXLWIDTH string format
-    printf '%s\r\033[K%'"$MAXLWIDTH"'s' "$CENSOR", "$line"
-    sleep $slp
-done <<< "$MULTILINE"
+main "$@"
 
