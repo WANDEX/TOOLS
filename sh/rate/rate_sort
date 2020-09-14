@@ -16,6 +16,9 @@ OPTIONS
     --bot               Get tail -n N before applying sort
     --debug             Debug of sort command
     --top               Get head -n N before applying sort
+EXAMPLE
+    # make sort in range of ranks 11-20 (get 10 coins total)
+    $(basename $BASH_SOURCE) -a -c6 -n20 --top 20 --bot 10
 EOF
 
 get_opt() {
