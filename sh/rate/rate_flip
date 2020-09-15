@@ -114,21 +114,25 @@ sort_list() {
     fi
 }
 
-main() {
+core() {
     MULTILINE=$(rate_sort -c $colnum -n $num ${top[@]} ${bot[@]} ${ad[@]})
     # hide unspecified columns
     MULTILINE=$(echo "$MULTILINE" | column -t -dN "$def_columns" -H "$del_columns")
     MAXLWIDTH=$(echo "$MULTILINE" | wc --max-line-length)
     CENSOR=$(printf %"$MAXLWIDTH"s | tr " " "X") # print X till max line length
-    while read line; do
+    while read line; do # line by line loop
         # delete/replace previous line and use $MAXLWIDTH string format
         printf '%s\r\033[K%s%'"$MAXLWIDTH"'s' "$CENSOR" "$prefix" "$line"
         sleep $slp
     done <<< "$MULTILINE"
 }
 
-get_opt "$@"
-sort_list
+main() {
+    get_opt "$@"
+    sort_list
+
+    core
+}
 
 main "$@"
 
