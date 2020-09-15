@@ -115,6 +115,7 @@ sort_cmd() {
         6) sort -k6n${sr[@]} ${debug[@]} "$tmpf";;
         *) echo "there is no such column with number:$colnum exit." && exit 1;;
     esac
+    rm -f "$tmpf" # delete the temporary file, as it's no longer needed
 }
 
 ascend() {
