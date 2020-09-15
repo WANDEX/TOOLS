@@ -12,12 +12,14 @@ OPTIONS
                         'c,p,H,h,m,r' - full list of awailable column names
     -h, --help          Display help
     -s, --slp           Sleep time between printing coin data
+    --bar               Execution in infinite loop
+    --debug             Debug mode -> echo about next inf loop iteration
 EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
     SHORT=ac:de:hn:p:s:
-    LONG=ascending,bot:,colnum:,descending,exclude:,help,number:,prefix:,slp:,top:
+    LONG=ascending,bar,bot:,colnum:,debug,descending,exclude:,help,number:,prefix:,slp:,top:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     def_columns="c,p,H,h,m,r" # list of column names
@@ -82,9 +84,15 @@ get_opt() {
             shift
             slp=$1
             ;;
+        --bar)
+            bar=1
+            ;;
         --bot)
             shift
             bot=(--bot $1)
+            ;;
+        --debug)
+            debug=1
             ;;
         --top)
             shift
@@ -115,7 +123,7 @@ sort_list() {
 }
 
 core() {
-    MULTILINE=$(rate_sort -c $colnum -n $num ${top[@]} ${bot[@]} ${ad[@]})
+    MULTILINE="$1"
     # hide unspecified columns
     MULTILINE=$(echo "$MULTILINE" | column -t -dN "$def_columns" -H "$del_columns")
     MAXLWIDTH=$(echo "$MULTILINE" | wc --max-line-length)
@@ -130,8 +138,17 @@ core() {
 main() {
     get_opt "$@"
     sort_list
+    RS=$(rate_sort -c $colnum -n $num ${top[@]} ${bot[@]} ${ad[@]})
 
-    core
+    if [[ $bar -eq 1 ]]; then
+        while true; do # infinite loop!
+            core "$RS"
+            [[ $debug -eq 1 ]] && printf " -> next inf loop iteration"
+            sleep $slp
+        done
+    else
+        core "$RS"
+    fi
 }
 
 main "$@"
