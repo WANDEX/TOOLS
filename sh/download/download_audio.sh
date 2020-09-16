@@ -3,6 +3,7 @@
 
 MUSIC="$HOME"'/Music/'
 PODCAST="$MUSIC"'podcasts/'
+YTM="$MUSIC"'~YTM/'
 
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
@@ -23,7 +24,6 @@ get_opt() {
     # PLACE FOR OPTION DEFAULTS
     URL="$(xclip -selection clipboard -out)"
     END=-1
-    OUT="$MUSIC"
     restr=()
     eval set -- "$OPTIONS"
     while true; do
@@ -49,7 +49,7 @@ get_opt() {
             ;;
         -p|--path)
             shift
-            OUT="$1"
+            path="$1"
             ;;
         -r|--restrict)
             restr=( --restrict-filenames )
@@ -72,56 +72,74 @@ get_opt "$@"
 # substring
 case "$URL" in
     *"bandcamp"*)
-        OUT+='~bandcamp/%(artist)s/%(playlist)s/%(playlist_index)02d. %(title)s.%(ext)s'
+        OUT="$MUSIC"'~bandcamp/%(artist)s/%(playlist)s/%(playlist_index)02d. %(title)s.%(ext)s'
         OPT=( --embed-thumbnail )
     ;;
     *"soundcloud"*"/sets/"*|*"soundcloud"*"/albums"*)
-        OUT+='~soundcloud/%(uploader)s/%(playlist)s/%(playlist_index)02d. %(fulltitle)s.%(ext)s'
+        OUT="$MUSIC"'~soundcloud/%(uploader)s/%(playlist)s/%(playlist_index)02d. %(fulltitle)s.%(ext)s'
         OPT=( --embed-thumbnail )
     ;;
     *"soundcloud"*)
-        OUT+='~soundcloud/%(uploader)s/%(playlist)s/%(fulltitle)s.%(ext)s'
+        OUT="$MUSIC"'~soundcloud/%(uploader)s/%(playlist)s/%(fulltitle)s.%(ext)s'
         OPT=( --embed-thumbnail )
     ;;
     *"youtu"*"playlist"*)
-        OUT+='~youtube/%(playlist_title)s/%(playlist_index)02d. %(title)s.%(ext)s'
+        OUT="$MUSIC"'~youtube/%(playlist_title)s/%(playlist_index)02d. %(title)s.%(ext)s'
         OPT=()
     ;;
     *"youtu"*)
-        OUT+='~youtube/%(title)s.%(ext)s'
+        OUT="$MUSIC"'~youtube/%(title)s.%(ext)s'
         OPT=()
     ;;
     *)
-        OUT+='~other/%(title)s.%(ext)s'
+        OUT="$MUSIC"'~other/%(title)s.%(ext)s'
         OPT=()
     ;;
 esac >/dev/null
 
 # substring
-case "$OUT" in
-    *"launch"*)
-        _launch_tomorrow_podcast="$PODCAST"'Launch Tomorrow Podcast/'
-        OUT="$_launch_tomorrow_podcast"'%(title)s.%(ext)s'
+case "$path" in
+    "kdi"|"Kdi"|"KDI")
+        _kdi="$PODCAST"'KDI/'
+        OUT="$_kdi"'%(title)s.%(ext)s'
         OPT=( --no-playlist )
     ;;
-    *"Podcast"*|*"podcast"*)
+    "lt"|"launch")
+        _lt="$PODCAST"'Launch Tomorrow Podcast/'
+        OUT="$_lt"'%(title)s.%(ext)s'
+        OPT=( --no-playlist )
+    ;;
+    "podcast"|"Podcast")
         OUT="$PODCAST"'%(title)s.%(ext)s'
-        OPT=( --embed-thumbnail --no-playlist )
+        OPT=( --no-playlist )
+    ;;
+    "ytm"|"Ytm"|"YTM")
+        _ytm="$YTM"'RNDM/%(uploader)s/'
+        OUT="$_ytm"'%(title)s.%(ext)s'
+        OPT=( --no-playlist )
+    ;;
+    *)
+        if [ ! -z "$path" ]; then
+            # add/replace 0 or more occurrences of '/' at the end, with one /
+            _path=$(echo "$path" | sed "s/[/]*$/\//")
+            OUT="$_path"'%(title)s.%(ext)s'
+            OPT=( --no-playlist )
+        fi
     ;;
 esac >/dev/null
 
 BEST='bestaudio[asr=48000]'
 FALLBACK='bestaudio/best'
 FORMAT="$BEST"'/'"$FALLBACK"
-notify-send -t 3000 "Downloading..."
+notify-send -t 3000 "Downloading [AUDIO]... path:" "$OUT"
 youtube-dl --ignore-errors --yes-playlist --playlist-end="$END" \
     --format "$FORMAT" --output "$OUT" "${restr[@]}" \
     --extract-audio --audio-format "mp3" "${OPT[@]}" "$URL" && \
-    notify-send -u normal -t 8000 "COMPLETED" "Downloading and Converting." || \
-    notify-send -u critical -t 5000 "ERROR" "Something gone wrong!"
+    notify-send -u normal -t 8000 "COMPLETED" "[AUDIO] Downloading and Converting." || \
+    notify-send -u critical -t 5000 "ERROR" "[AUDIO] Something gone wrong!"
 
-if [[ $_launch_tomorrow_podcast ]]; then
-    cd "$_launch_tomorrow_podcast"
+if [[ $_lt ]]; then
+    cd "$_lt"
     match=$(find . -maxdepth 1 -not -regex '\./S..E...*\.mp3' -not -name "*.jpg" -not -name "\." | sed 's,\.\/,,')
     new_name=$(echo "$match" | sed 's/\(.*\) \(S..E..\)/\2 - \1/')
     mv -f "$match" "$new_name"
