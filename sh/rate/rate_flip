@@ -13,7 +13,7 @@ OPTIONS
     -h, --help          Display help
     -s, --slp           Sleep time between printing coin data
     --bar               Execution in infinite loop
-    --debug             Debug mode -> echo about next inf loop iteration
+    --debug             Debug mode -> echo INFO messages
 EOF
 
 get_opt() {
@@ -138,15 +138,23 @@ core() {
 main() {
     get_opt "$@"
     sort_list
-    RS=$(rate_sort -c $colnum -n $num ${top[@]} ${bot[@]} ${ad[@]})
-
+    # not executes here! only array of raw arguments!
+    CMD=(rate_sort -c $colnum -n $num ${top[@]} ${bot[@]} ${ad[@]})
     if [[ $bar -eq 1 ]]; then
         while true; do # infinite loop!
-            core "$RS"
-            [[ $debug -eq 1 ]] && printf " -> next inf loop iteration"
+            RS=$(${CMD[@]})
+            OLD_MTIME=$(date -r $RATE_FORM)
+            [[ $debug -eq 1 ]] && printf " -> fetched NEW DATA!\n"
             sleep $slp
+            # loop till update of the file modification time
+            while [[ $OLD_MTIME == $(date -r $RATE_FORM) ]]; do
+                core "$RS"
+                [[ $debug -eq 1 ]] && printf " -> next inf loop iteration"
+                sleep $slp
+            done
         done
     else
+        RS=$(${CMD[@]})
         core "$RS"
     fi
 }
