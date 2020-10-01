@@ -8,20 +8,23 @@ RATE_FORM="$CSCRDIR"'/rate/rate_form'
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
-    -e, --exclude       Comma separated list of the column names to exclude:
-                        'c,p,H,h,m,r' - full list of awailable column names
-    -h, --help          Display help
-    -s, --slp           Sleep time between printing coin data
-    --bar               Execution in infinite loop
-    --debug             Debug mode -> echo INFO messages
+    -e, --exclude   Comma separated list of the column names to exclude:
+                    'c,p,H,h,m,r' - full list of awailable column names
+    -h, --help      Display help
+    -p, --prefix    Prefix message before the data
+    -s, --slp       Sleep time between printing coin data
+    --bar           Special oneshot mode without loop, but with temp file
+    --inf           Execution in infinite loop
+    --debug         Debug mode -> echo INFO messages
 EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
     SHORT=ac:de:hn:p:s:
-    LONG=ascending,bar,bot:,colnum:,debug,descending,exclude:,help,number:,prefix:,slp:,top:
+    LONG=ascending,bar,bot:,colnum:,debug,descending,exclude:,help,inf,number:,prefix:,sig:,slp:,top:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
+    bar=0
     def_columns="c,p,H,h,m,r" # list of column names
     del_columns="p,m,r"       # list of columns to delete
     num=10
@@ -94,6 +97,23 @@ get_opt() {
         --debug)
             debug=1
             ;;
+        --inf)
+            inf=1
+            ;;
+        --sig)
+            shift
+            case $1 in
+                0*)
+                    printf "$1\n^ unsupported number! exit.\n"
+                    exit 1
+                    ;;
+                ''|*[!0-9]*)
+                    printf "$1\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    exit 1
+                    ;;
+                *) sig=$1 ;;
+            esac
+            ;;
         --top)
             shift
             top=(--top $1)
@@ -122,17 +142,48 @@ sort_list() {
     fi
 }
 
+bar() {
+    MULTILINE="$1"
+    tmpd="${TMPDIR:-/tmp/}$(basename $0)" && mkdir -p "$tmpd"
+    # OPTIONS as simple string without spaces
+    sopt=$(echo "$OPTIONS" | sed "s/[ ][-]*/_/g; s/[']//g; s/_$//g; s/\///g; s/\\\//g;")
+    ufile="$tmpd/$(basename $0)$sopt"
+    if [ -f "$ufile" ]; then
+        ltotal=$(cat "$ufile" | wc -l) # total num of lines
+        lnum=$(sed -n '/>/=' "$ufile") # get line number with > char
+        sed -i $lnum's/^>//' "$ufile"  # rm > on current line
+        if [[ $ltotal -eq $lnum ]]; then
+            nnum=1
+        else
+            nnum=$(($lnum+1))
+        fi
+        sed -i $nnum's/^/>/' "$ufile" # add > on next line
+    else
+        # if file not exist create with data
+        echo "$MULTILINE" > "$ufile"
+        # insert at beginning of first line
+        sed -i '1s/^/>/' "$ufile"
+    fi
+    grep '^>' "$ufile" | sed 's/^>//'
+}
+
 core() {
     MULTILINE="$1"
     # hide unspecified columns
     MULTILINE=$(echo "$MULTILINE" | column -t -dN "$def_columns" -H "$del_columns")
     MAXLWIDTH=$(echo "$MULTILINE" | wc --max-line-length)
-    CENSOR=$(printf %"$MAXLWIDTH"s | tr " " "X") # print X till max line length
-    while read line; do # line by line loop
-        # delete/replace previous line and use $MAXLWIDTH string format
-        printf '%s\r\033[K%s%'"$MAXLWIDTH"'s' "$CENSOR" "$prefix" "$line"
-        sleep $slp
-    done <<< "$MULTILINE"
+    if [[ $bar -eq 0 ]]; then
+        CENSOR=$(printf %"$MAXLWIDTH"s | tr " " "X") # print X till max line length
+        TRM="\r\033[K"
+        CR=""
+        while read line; do # line by line loop
+            # delete/replace previous line and use $MAXLWIDTH string format
+            printf "%s$TRM%s%""$MAXLWIDTH"'s'"$CR" "$CENSOR" "$prefix" "$line"
+            sleep $slp
+        done <<< "$MULTILINE"
+    elif [[ $bar -eq 1 ]]; then
+        bar "$MULTILINE"
+    fi
 }
 
 main() {
@@ -140,7 +191,7 @@ main() {
     sort_list
     # not executes here! only array of raw arguments!
     CMD=(rate_sort -c $colnum -n $num ${top[@]} ${bot[@]} ${ad[@]})
-    if [[ $bar -eq 1 ]]; then
+    if [[ $inf -eq 1 ]]; then
         while true; do # infinite loop!
             RS=$(${CMD[@]})
             OLD_MTIME=$(date -r $RATE_FORM)
