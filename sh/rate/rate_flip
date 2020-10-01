@@ -25,6 +25,7 @@ get_opt() {
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     bar=0
+    inf=0
     def_columns="c,p,H,h,m,r" # list of column names
     del_columns="p,m,r"       # list of columns to delete
     num=10
@@ -142,13 +143,22 @@ sort_list() {
     fi
 }
 
+
 bar() {
-    MULTILINE="$1"
+    CMD=($@) # not executes here! only array of raw arguments!
     tmpd="${TMPDIR:-/tmp/}$(basename $0)" && mkdir -p "$tmpd"
     # OPTIONS as simple string without spaces
     sopt=$(echo "$OPTIONS" | sed "s/[ ][-]*/_/g; s/[']//g; s/_$//g; s/\///g; s/\\\//g;")
     ufile="$tmpd/$(basename $0)$sopt"
-    if [ -f "$ufile" ]; then
+    # if mtime of RATE_FORM > ufile or ufile does not exist
+    if [[ $(date -r $RATE_FORM +%s) -gt $(date -r $ufile +%s) ]] || \
+        [ ! -f "$ufile" ]; then
+        MULTILINE=$(${CMD[@]}) # executes here!
+        # if file not exist create with data
+        echo "$MULTILINE" > "$ufile"
+        # insert at beginning of first line
+        sed -i '1s/^/>/' "$ufile"
+    elif [ -f "$ufile" ]; then
         ltotal=$(cat "$ufile" | wc -l) # total num of lines
         lnum=$(sed -n '/>/=' "$ufile") # get line number with > char
         sed -i $lnum's/^>//' "$ufile"  # rm > on current line
@@ -158,32 +168,23 @@ bar() {
             nnum=$(($lnum+1))
         fi
         sed -i $nnum's/^/>/' "$ufile" # add > on next line
-    else
-        # if file not exist create with data
-        echo "$MULTILINE" > "$ufile"
-        # insert at beginning of first line
-        sed -i '1s/^/>/' "$ufile"
     fi
     grep '^>' "$ufile" | sed 's/^>//'
 }
 
-core() {
+term() {
     MULTILINE="$1"
     # hide unspecified columns
     MULTILINE=$(echo "$MULTILINE" | column -t -dN "$def_columns" -H "$del_columns")
     MAXLWIDTH=$(echo "$MULTILINE" | wc --max-line-length)
-    if [[ $bar -eq 0 ]]; then
-        CENSOR=$(printf %"$MAXLWIDTH"s | tr " " "X") # print X till max line length
-        TRM="\r\033[K"
-        CR=""
-        while read line; do # line by line loop
-            # delete/replace previous line and use $MAXLWIDTH string format
-            printf "%s$TRM%s%""$MAXLWIDTH"'s'"$CR" "$CENSOR" "$prefix" "$line"
-            sleep $slp
-        done <<< "$MULTILINE"
-    elif [[ $bar -eq 1 ]]; then
-        bar "$MULTILINE"
-    fi
+    CENSOR=$(printf %"$MAXLWIDTH"s | tr " " "X") # print X till max line length
+    TRM="\r\033[K"
+    CR=""
+    while read line; do # line by line loop
+        # delete/replace previous line and use $MAXLWIDTH string format
+        printf "%s$TRM%s%""$MAXLWIDTH"'s'"$CR" "$CENSOR" "$prefix" "$line"
+        sleep $slp
+    done <<< "$MULTILINE"
 }
 
 main() {
@@ -191,7 +192,9 @@ main() {
     sort_list
     # not executes here! only array of raw arguments!
     CMD=(rate_sort -c $colnum -n $num ${top[@]} ${bot[@]} ${ad[@]})
-    if [[ $inf -eq 1 ]]; then
+    if [[ $bar -eq 1 ]]; then
+        bar "${CMD[@]}"
+    elif [[ $inf -eq 1 ]]; then
         while true; do # infinite loop!
             RS=$(${CMD[@]})
             OLD_MTIME=$(date -r $RATE_FORM)
@@ -199,14 +202,14 @@ main() {
             sleep $slp
             # loop till update of the file modification time
             while [[ $OLD_MTIME == $(date -r $RATE_FORM) ]]; do
-                core "$RS"
+                term "$RS"
                 [[ $debug -eq 1 ]] && printf " -> next inf loop iteration"
                 sleep $slp
             done
         done
-    else
+    elif [[ $inf -eq 0 ]]; then
         RS=$(${CMD[@]})
-        core "$RS"
+        term "$RS"
     fi
 }
 
