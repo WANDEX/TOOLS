@@ -21,7 +21,7 @@ EOF
 get_opt() {
     # Parse and read OPTIONS command-line options
     SHORT=ac:de:hn:p:s:
-    LONG=ascending,bar,bot:,colnum:,debug,descending,exclude:,help,inf,number:,prefix:,sig:,slp:,top:
+    LONG=ascending,bar,bot:,colnum:,debug,descending,exclude:,help,inf,number:,prefix:,slp:,top:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     bar=0
@@ -100,20 +100,6 @@ get_opt() {
             ;;
         --inf)
             inf=1
-            ;;
-        --sig)
-            shift
-            case $1 in
-                0*)
-                    printf "$1\n^ unsupported number! exit.\n"
-                    exit 1
-                    ;;
-                ''|*[!0-9]*)
-                    printf "$1\n^ IS NOT A NUMBER OF INT! exit.\n"
-                    exit 1
-                    ;;
-                *) sig=$1 ;;
-            esac
             ;;
         --top)
             shift
