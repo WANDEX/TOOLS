@@ -129,6 +129,10 @@ sort_list() {
     fi
 }
 
+hide_columns() {
+    # hide unspecified columns
+    echo "$1" | column -t -dN "$def_columns" -H "$del_columns"
+}
 
 bar() {
     CMD=($@) # not executes here! only array of raw arguments!
@@ -137,13 +141,15 @@ bar() {
     sopt=$(echo "$OPTIONS" | sed "s/[ ][-]*/_/g; s/[']//g; s/_$//g; s/\///g; s/\\\//g;")
     ufile="$tmpd/$(basename $0)$sopt"
     # if mtime of RATE_FORM > ufile or ufile does not exist
-    if [[ $(date -r $RATE_FORM +%s) -gt $(date -r $ufile +%s) ]] || \
-        [ ! -f "$ufile" ]; then
+    if [ ! -f "$ufile" ] || [[ $(date -r $RATE_FORM +%s) -gt $(date -r $ufile +%s) ]]; then
         MULTILINE=$(${CMD[@]}) # executes here!
-        # if file not exist create with data
-        echo "$MULTILINE" > "$ufile"
-        # insert at beginning of first line
-        sed -i '1s/^/>/' "$ufile"
+        MULTILINE=$(hide_columns "$MULTILINE")
+        NUM_LINES=$(echo "$MULTILINE" | wc -l)
+        LINE_ENDS=$(seq $NUM_LINES | sed "c |") # gen line ends for each line
+        echo "$MULTILINE" > "$ufile" # paste requires file -> only one input
+        # glue input to file and make all columns even width, especially for the last columns!
+        GLUE_ENDS=$(echo "$LINE_ENDS" | paste -d' ' "$ufile" - | column -to' ')
+        echo "$GLUE_ENDS" | sed '1s/^/>/' > "$ufile" # insert at beginning of first line
     elif [ -f "$ufile" ]; then
         ltotal=$(cat "$ufile" | wc -l) # total num of lines
         lnum=$(sed -n '/>/=' "$ufile") # get line number with > char
@@ -154,14 +160,18 @@ bar() {
             nnum=$(($lnum+1))
         fi
         sed -i $nnum's/^/>/' "$ufile" # add > on next line
+    else
+        [[ $debug -eq 1 ]] && printf "SOMETHING WENT WRONG!"
+        notify-send -u critical "$(basename $0)" "ERROR INSIDE BAR MODE!"
+        exit 1
     fi
-    grep '^>' "$ufile" | sed 's/^>//'
+    out=$(grep "^>" "$ufile" | sed "s/^>//; s/|$//;")
+    printf "$prefix""$out"
 }
 
 term() {
     MULTILINE="$1"
-    # hide unspecified columns
-    MULTILINE=$(echo "$MULTILINE" | column -t -dN "$def_columns" -H "$del_columns")
+    MULTILINE=$(hide_columns "$MULTILINE")
     MAXLWIDTH=$(echo "$MULTILINE" | wc --max-line-length)
     CENSOR=$(printf %"$MAXLWIDTH"s | tr " " "X") # print X till max line length
     TRM="\r\033[K"
