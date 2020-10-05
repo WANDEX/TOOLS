@@ -1,0 +1,30 @@
+#!/bin/sh
+# show rate data of top coins by $1-COLNUM, $2-ORDER/direction
+
+COLNUM=${1:-3}
+ORDER=${2:-"gain"}
+
+case "$ORDER" in
+    *"-d"*|*"g"*|*"u"*) UD=' 🔺 ' && AD='-d';;
+    *"-a"*|*"l"*|*"d"*) UD=' 🔻 ' && AD='-a';;
+    *) UD=' 🔺 ' && AD='-d';;
+esac
+
+case "$COLNUM" in
+    1) PREFIX="$UD"'C:';;
+    2) PREFIX="$UD"'P:';;
+    3) PREFIX="$UD"'24:';;
+    4) PREFIX="$UD"'01:';;
+    5) PREFIX="$UD"'M:';;
+    6) PREFIX="$UD"'R:';;
+    *) echo "there is no such column with number:$colnum exit." && exit 1;;
+esac
+
+case $BLOCK_BUTTON in
+    3) notify-send "$(basename $BASH_SOURCE)" "\- show rate data of top coins ($ORDER)" ;;
+    6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+esac
+
+printf '['
+rate_flip --bar "$AD" -c $COLNUM -n 10 --prefix "$PREFIX"
+printf ']'
