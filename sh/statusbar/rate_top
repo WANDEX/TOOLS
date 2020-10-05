@@ -3,28 +3,74 @@
 
 COLNUM=${1:-3}
 ORDER=${2:-"gain"}
+SIG=$((34+$3))
+
 
 case "$ORDER" in
-    *"-d"*|*"g"*|*"u"*) UD=' 🔺 ' && AD='-d';;
-    *"-a"*|*"l"*|*"d"*) UD=' 🔻 ' && AD='-a';;
-    *) UD=' 🔺 ' && AD='-d';;
+    *"-d"*|*"g"*|*"u"*) UD='🔺' && AD='-d';;
+    *"-a"*|*"l"*|*"d"*) UD='🔻' && AD='-a';;
+    *) UD='🔺' && AD='-d';;
 esac
 
 case "$COLNUM" in
-    1) PREFIX="$UD"'C:';;
-    2) PREFIX="$UD"'P:';;
-    3) PREFIX="$UD"'24:';;
-    4) PREFIX="$UD"'01:';;
-    5) PREFIX="$UD"'M:';;
-    6) PREFIX="$UD"'R:';;
+    1) PREFIX='C';;
+    2) PREFIX='P';;
+    3) PREFIX='24';;
+    4) PREFIX='01';;
+    5) PREFIX='M';;
+    6) PREFIX='R';;
     *) echo "there is no such column with number:$colnum exit." && exit 1;;
 esac
 
+# common options for rate_flip & rate_sort
+OPTS=("$AD" -c $COLNUM -n 10)
+RFOPTS=(${OPTS[@]} --bar --prefix "$UD""$PREFIX:")
+fold="[+]rt($PREFIX)$UD"
+
+notify() {
+    DATA=$(rate_sort "${OPTS[@]}")
+    notify-send -u low "$(basename $BASH_SOURCE) $ORDER" "\n$DATA\n."
+}
+
+guess_file() {
+    tmpd="${TMPDIR:-/tmp/}rate_flip"
+    sopt=$(echo "${RFOPTS[@]}" | sed "s/^-/_/g; s/[ ][-]*/_/g; s/[']//g; s/_$//g; s/\///g; s/\\\//g;")
+    file="$tmpd/rate_flip$sopt"
+    if [ -f "$file" ]; then
+        echo "$file"
+    else
+        notify-send -u critical "ERROR $(basename $BASH_SOURCE)" "File not exist:\n$file\n."
+        exit 1
+    fi
+}
+
+fold_elem() {
+    file=$(guess_file)
+    last_line=$(tail -n 1 "$file")
+    # toggle between fold/unfold
+    if [[ "$last_line" == "$fold" ]]; then
+        sed -i '$d' "$file" # remove last line
+    else
+        # write to end of a file
+        echo "$fold" >> "$file"
+    fi
+}
+
 case $BLOCK_BUTTON in
-    3) notify-send "$(basename $BASH_SOURCE)" "\- show rate data of top coins ($ORDER)" ;;
+    1) notify ;;
+    2) fold_elem ; kill -$SIG $(pidof dwmblocks) ;;
+    3) notify-send "$(basename $BASH_SOURCE)" "Show rate data for top coins ($ORDER)
+- Left click to show rate_sort data
+- MMB fold/unfold $fold $ORDER" ;;
     6) "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 
-printf '['
-rate_flip --bar "$AD" -c $COLNUM -n 10 --prefix "$PREFIX"
-printf ']'
+file=$(guess_file)
+last_line=$(tail -n 1 "$file")
+if [[ "$last_line" == "$fold" ]]; then
+    echo "$fold"
+else
+    rate_flip "${RFOPTS[@]}"
+    printf '|'
+fi
+
