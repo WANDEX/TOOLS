@@ -1,5 +1,5 @@
 #!/bin/sh
-# script for cronjob to make simplified rate preformatted output by columns
+# script for cronjob to make simplified rate preformed output by columns
 ## using rate_coin_names
 # it exist because rate --coins gives obsolete list of coins
 # which gives less data then regular rate command. NOT rate WRAPPER FAULT!
@@ -9,7 +9,7 @@ SCRIPTS="${SCRIPTS:-"$HOME"/source/scripts}"
 RATE_CACHE="$CSCRDIR"'/rate/rate'
 RATE_FORM="$CSCRDIR"'/rate/rate_form'
 RATE_NAMES="$SCRIPTS"'/sh/rate/rate_coin_names'
-RATE_WRAPPER="$SCRIPTS"'/sh/curl/rate'
+RATE_WRAPPER="$SCRIPTS"'/sh/rate/rate'
 
 get_coins_data() {
     "$RATE_WRAPPER" -f '%c\t%p\t%H\t%h\t%m\t%r' -o "$1" -d '\n'
