@@ -78,12 +78,12 @@ get_opt() {
 
 get_opt "$@"
 
-if [ $DIR_NOT_FOUND -eq 1 ]; then
+if [[ $DIR_NOT_FOUND -eq 1 ]]; then
     echo "${red}NOT FOUND ANY PATCH DIR INSIDE CURRENT GIT ROOT DIR:${end}"
     echo "${yel}$GITRDIR${end}"
     echo "Do not forget to ${cyn}cd${end} inside ${cyn}git${end} project, with ${cyn}patch/patches dir${end}. exit."
     exit 1
-elif [ $FILE_NOT_FOUND -eq 1 ]; then
+elif [[ $FILE_NOT_FOUND -eq 1 ]]; then
     echo "${yel}$FILE${end}"
     echo "${red}FILE DOES NOT EXIST!${end} exit."
     exit 1
