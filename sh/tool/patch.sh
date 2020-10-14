@@ -158,11 +158,10 @@ non_existence_msg() {
 }
 
 validate() {
-    if [[ $R ]]; then # if variable defined
-        Q="Reverse ALL patches? [Y/n] "
-    else
-        Q="Apply ALL patches? [Y/n] "
-    fi
+    # if variable defined
+    [[ $R ]] && RA="Reverse" || RA="Apply"
+    [[ $solo_n ]] && SA="ONLY this patch?" || SA="ALL patches?"
+    Q="$RA $SA [y/n] "
     read -p "$Q" -n 1 -r
     echo "" # move to a new line
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
