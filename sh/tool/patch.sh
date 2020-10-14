@@ -21,26 +21,27 @@ OPTIONS
     --init          Create patch dir with active_patch_list file inside
 EOF
 
-GITRDIR=$(git rev-parse --show-toplevel)
-DIR="$GITRDIR/patch"
-if [ -d "$DIR" ]; then
-    DIR="$DIR"
-elif [ -d "$GITRDIR/patches" ]; then
-    DIR="$GITRDIR/patches"
-else
-    DIR_NOT_FOUND=1
-fi
-
-FILE="$DIR/active_patch_list"
-if [ -f "$FILE" ]; then
-    # remove everything after # character and empty lines with/without spaces
-    ORDER=$(cat "$FILE" | sed "s/[[:space:]]*#.*$//g; /^[[:space:]]*$/d")
-    SEP='| '
-    ORDER=$(echo "$ORDER" | nl -w2 -s"$SEP")
-    N_MAX=$(echo "$ORDER" | wc -l)
-else
-    FILE_NOT_FOUND=1
-fi
+check_existance() {
+    GITRDIR=$(git rev-parse --show-toplevel)
+    DIR="$GITRDIR/patch"
+    if [ -d "$DIR" ]; then
+        DIR="$DIR"
+    elif [ -d "$GITRDIR/patches" ]; then
+        DIR="$GITRDIR/patches"
+    else
+        DIR_NOT_FOUND=1
+    fi
+    FILE="$DIR/active_patch_list"
+    if [ -f "$FILE" ]; then
+        # remove everything after # character and empty lines with/without spaces
+        ORDER=$(cat "$FILE" | sed "s/[[:space:]]*#.*$//g; /^[[:space:]]*$/d")
+        SEP='| '
+        ORDER=$(echo "$ORDER" | nl -w2 -s"$SEP")
+        N_MAX=$(echo "$ORDER" | wc -l)
+    else
+        FILE_NOT_FOUND=1
+    fi
+}
 
 print_colored() {
     if [[ $1 == all ]]; then
@@ -196,6 +197,7 @@ cmmnd() {
 }
 
 main() {
+    check_existance
     get_opt "$@"
     non_existence_msg
     validate
