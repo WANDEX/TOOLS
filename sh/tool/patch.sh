@@ -208,6 +208,10 @@ add_mark() {
     patch_file_path="$1"
     mark="$2"
     lnum=$(get_line_num "$patch_file_path")
+    if [[ "$mark" == F ]]; then
+        echo "${blu}Patch contained${end} ${red}FAILED Hunk${end}"
+        echo "${blu}and marked as:${end}${red}F${end}"
+    fi
     [[ ! $dry ]] && sed -i $lnum"s/^$SEP./$SEP$mark/" "$FILE" &&
     [[ $debug -eq 1 ]] && printf "mark:${red}$mark${end} SET! file:${yel}$file${end}\n"
 }
@@ -233,6 +237,20 @@ cmmnd() {
             A) R=(--reverse);;
             N) R=();;
             R) R=();;
+            F)
+                echo "Previously this patch introduced ${red}FAILED Hunks!${end}"
+                make clean && echo "${cyn}make clean [finished]${end}"
+                echo "${yel}$file${end}"
+                while true; do
+                    read -p "Apply/Reverse this patch? [a/r] " -n 1 -r
+                    echo "" # move to a new line
+                    case "$REPLY" in
+                        [Aa]*) R=(); break;;
+                        [Rr]*) R=(--reverse); break;;
+                        *) echo "${red}I don't get it.${end}";;
+                    esac
+                done
+                ;;
             *)
                 echo "${red}ERROR: patch_mark for this file not found!${end}"
                 echo "${yel}$file${end}"
@@ -245,7 +263,11 @@ cmmnd() {
     [[ $debug -eq 1 ]] && printf "${mag}file found by $ET:${end}${yel}$file${end}\n"
     validate
     patch -f "${R[@]}" "${dry[@]}" < "$file"
-    add_mark "$file" "$M"
+    case "$?" in # check patch exit codes
+        0) add_mark "$file" "$M";;
+        1) add_mark "$file" "F";;
+        *) echo "[$?]:${red}SERIOUS ERROR!${end}";;
+    esac
 }
 
 main() {
