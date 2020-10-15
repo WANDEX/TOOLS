@@ -71,14 +71,13 @@ print_colored() {
         rm -f "$tmpf_num" "$tmpf_dir" "$tmpf_bsn" # delete the temporary files
         rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
     else
-        arg="$1"
-        file="$2"
+        file="$1"
         if [ -z "$file" ]; then
             echo "ERROR: file variable is empty in function call. exit"
             exit 1
         fi
         msg=""
-        num=$(echo $arg | awk '{print $1}')
+        num=$(echo "$ORDER" | grep "$file" | awk '{print $1}')
         dir=$(dirname $file)
         bsn=$(basename $file)
         OUT=$(printf "%s  %s%s" "${mag}$num${end}" \
@@ -213,7 +212,7 @@ add_mark() {
         echo "${blu}and marked as:${end}${red}F${end}"
     fi
     [[ ! $dry ]] && sed -i $lnum"s/^$SEP./$SEP$mark/" "$FILE" &&
-    [[ $debug -eq 1 ]] && printf "mark:${red}$mark${end} SET! file:${yel}$file${end}\n"
+    [[ $debug -eq 1 ]] && echo "mark:${red}$mark${end} SET!"
 }
 
 cmmnd() {
@@ -240,7 +239,7 @@ cmmnd() {
             F)
                 echo "Previously this patch introduced ${red}FAILED Hunks!${end}"
                 make clean && echo "${cyn}make clean [finished]${end}"
-                echo "${yel}$file${end}"
+                print_colored "$file"
                 while true; do
                     read -p "Apply/Reverse this patch? [a/r] " -n 1 -r
                     echo "" # move to a new line
@@ -253,14 +252,14 @@ cmmnd() {
                 ;;
             *)
                 echo "${red}ERROR: patch_mark for this file not found!${end}"
-                echo "${yel}$file${end}"
+                print_colored "$file"
                 echo "check your active_patch_list file. exit."
                 exit 1
                 ;;
         esac
     fi
-    print_colored "$GREP" "$file"
-    [[ $debug -eq 1 ]] && printf "${mag}file found by $ET:${end}${yel}$file${end}\n"
+    print_colored "$file"
+    [[ $debug -eq 1 ]] && echo "${mag}file found by $ET:${end}"
     validate
     patch -f "${R[@]}" "${dry[@]}" < "$file"
     case "$?" in # check patch exit codes
