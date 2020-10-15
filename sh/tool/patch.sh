@@ -187,14 +187,27 @@ validate() {
     echo "" # move to a new line
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         # handle exits from shell or function but don't exit interactive shell
-        [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1
+        [[ "$0" = "$BASH_SOURCE" ]] && exit 0 || return 1
     fi
 }
 
+get_line_num() {
+    pattern="$1"
+    lnum=$(sed -n '\|'"$pattern"'|=' "$FILE") # get line number with pattern
+    echo "$lnum"
+}
+
+get_patch_mark() {
+    patch_file_path="$1"
+    lnum=$(get_line_num "$patch_file_path")
+    mark=$(sed -n $lnum's/^'"$SEP"'\(.\).*$/\1/p' "$FILE")
+    echo "$mark"
+}
+
 add_mark() {
-    mark="$1"
-    patch_file_path="$2"
-    lnum=$(sed -n '\|'"$patch_file_path"'|=' "$FILE") # get line number with file
+    patch_file_path="$1"
+    mark="$2"
+    lnum=$(get_line_num "$patch_file_path")
     [[ ! $dry ]] && sed -i $lnum"s/^$SEP./$SEP$mark/" "$FILE" &&
     [[ $debug -eq 1 ]] && printf "mark:${red}$mark${end} SET! file:${yel}$file${end}\n"
 }
@@ -211,25 +224,34 @@ cmmnd() {
         # arg is number
         GREP=$(echo "$ORDER" | grep $arg"$NLS$SEP")
         ET="number"
-        #if
-            #R=(--reverse)
-        #else
-            #R=()
-        #fi
     fi
     # discard first column & trim leading spaces
     file=$(echo "$GREP" | awk '{$1="";print $0}' | sed "s/^[ ]*//")
+    if [[ ! $R ]]; then # if -R option not explicitly specified
+        # automatic toggle behavior of patch -R (reverse/apply) option
+        case "$(get_patch_mark "$file")" in
+            A) R=(--reverse);;
+            N) R=();;
+            R) R=();;
+            *)
+                echo "${red}ERROR: patch_mark for this file not found!${end}"
+                echo "${yel}$file${end}"
+                echo "check your active_patch_list file. exit."
+                exit 1
+                ;;
+        esac
+    fi
     print_colored "$GREP" "$file"
     [[ $debug -eq 1 ]] && printf "${mag}file found by $ET:${end}${yel}$file${end}\n"
+    validate
     patch -f "${R[@]}" "${dry[@]}" < "$file"
-    add_mark "$M" "$file"
+    add_mark "$file" "$M"
 }
 
 main() {
     check_existance
     get_opt "$@"
     non_existence_msg
-    validate
     if [[ $solo_n ]]; then # if variable defined
         cmmnd $solo_n
     else
