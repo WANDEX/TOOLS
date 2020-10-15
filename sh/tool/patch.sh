@@ -3,11 +3,13 @@
 # to keep the stacking order of the patches.
 
 red=$'\e[1;31m'; grn=$'\e[1;32m'; yel=$'\e[1;33m'; blu=$'\e[1;34m'; mag=$'\e[1;35m'; cyn=$'\e[1;36m'; end=$'\e[0m'
+SEP='|'; NLS=')'
 
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
+    -a, --add       Add patch to the end of active_patch_list file
     -h, --help      Display help
     -l, --list      Print list of patches in default order
     -R, --reverse   Reverse list of patches and apply 'patch --reverse' option:
@@ -35,8 +37,7 @@ check_existance() {
     if [ -f "$FILE" ]; then
         # remove everything after # character and empty lines with/without spaces
         ORDER=$(cat "$FILE" | sed "s/[[:space:]]*#.*$//g; /^[[:space:]]*$/d")
-        SEP='| '
-        ORDER=$(echo "$ORDER" | nl -w2 -s"$SEP")
+        ORDER=$(echo "$ORDER" | nl -w2 -n"rn" -s"$NLS")
         N_MAX=$(echo "$ORDER" | wc -l)
     else
         FILE_NOT_FOUND=1
@@ -87,16 +88,29 @@ print_colored() {
     printf "$msg""$OUT""\n"
 }
 
+add_patch() {
+    patch_file_path="$1"
+    SPACES='  '
+    printf "$SEP"N"$SPACES$patch_file_path\n" >> "$FILE"
+    echo "${yel}$patch_file_path${end}"
+    echo "patch added to the end of the active_patch_list. exit"
+    exit 0
+}
+
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=hlRs:
-    LONG=help,list,reverse,solo:,dry-run,init
+    SHORT=a:hlRs:
+    LONG=add:,help,list,reverse,solo:,dry-run,init
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     debug=0
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
+        -a|--add)
+            shift
+            add_patch "$1"
+            ;;
         -h|--help)
             echo "$USAGE"
             exit 0
@@ -160,7 +174,13 @@ non_existence_msg() {
 
 validate() {
     # if variable defined
-    [[ $R ]] && RA="Reverse" || RA="Apply"
+    if [[ $R ]]; then
+        RA="Reverse"
+        M="R"
+    else
+        RA="Apply"
+        M="A"
+    fi
     [[ $solo_n ]] && SA="ONLY this patch?" || SA="ALL patches?"
     Q="$RA $SA [y/n] "
     read -p "$Q" -n 1 -r
@@ -169,6 +189,14 @@ validate() {
         # handle exits from shell or function but don't exit interactive shell
         [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1
     fi
+}
+
+add_mark() {
+    mark="$1"
+    patch_file_path="$2"
+    lnum=$(sed -n '\|'"$patch_file_path"'|=' "$FILE") # get line number with file
+    [[ ! $dry ]] && sed -i $lnum"s/^$SEP./$SEP$mark/" "$FILE" &&
+    [[ $debug -eq 1 ]] && printf "mark:${red}$mark${end} SET! file:${yel}$file${end}\n"
 }
 
 cmmnd() {
@@ -181,7 +209,7 @@ cmmnd() {
         ET="string"
     else
         # arg is number
-        GREP=$(echo "$ORDER" | grep $arg"$SEP")
+        GREP=$(echo "$ORDER" | grep $arg"$NLS$SEP")
         ET="number"
         #if
             #R=(--reverse)
@@ -194,6 +222,7 @@ cmmnd() {
     print_colored "$GREP" "$file"
     [[ $debug -eq 1 ]] && printf "${mag}file found by $ET:${end}${yel}$file${end}\n"
     patch -f "${R[@]}" "${dry[@]}" < "$file"
+    add_mark "$M" "$file"
 }
 
 main() {
