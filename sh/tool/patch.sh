@@ -45,6 +45,8 @@ check_existance() {
 }
 
 print_colored() {
+    sed_num="s/.$//"
+    sed_mrk="s/[[:digit:]]*$NLS$SEP\(.\).*$/\1/p"
     if [[ $1 == all ]]; then
         arg="$ORDER"
         msg="patches in default apply patch order:\n"
@@ -53,8 +55,8 @@ print_colored() {
         tmpf_mrk=$(mktemp "$tmpd/XXXX")
         tmpf_dir=$(mktemp "$tmpd/XXXX")
         tmpf_bsn=$(mktemp "$tmpd/XXXX")
-        echo "$arg" | awk '{print $1}' | sed "s/.$//" > "$tmpf_num"
-        echo "$arg" | awk '{print $1}' | sed -n 's/'"[[:digit:]]*$NLS$SEP"'\(.\).*$/\1/p' > "$tmpf_mrk"
+        echo "$arg" | awk '{print $1}' | sed "$sed_num" > "$tmpf_num"
+        echo "$arg" | awk '{print $1}' | sed -n "$sed_mrk" > "$tmpf_mrk"
         echo "$arg" | sed "s/^.*[ ]//g; s/[^/]*$//g" > "$tmpf_dir"
         echo "$arg" | sed "s/^.*[/]//g" > "$tmpf_bsn"
         # colorize columns
@@ -70,7 +72,7 @@ print_colored() {
                 $4 = "'${cyn}'" $4 "'${end}'";
                 print
             }
-        ' | column -t -o' ')
+        ' | column -t -o' ' | sed 's/[ ]//1; s/[ ]//2') # replace N occurrence
         rm -f "$tmpf_num" "$tmpf_mrk" "$tmpf_dir" "$tmpf_bsn" # delete the temporary files
         rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
     else
@@ -80,8 +82,8 @@ print_colored() {
             exit 1
         fi
         msg=""
-        num=$(echo "$ORDER" | grep "$file" | awk '{print $1}' | sed "s/.$//")
-        mrk=$(echo "$ORDER" | grep "$file" | awk '{print $1}' | sed -n 's/'"[[:digit:]]*$NLS$SEP"'\(.\).*$/\1/p')
+        num=$(echo "$ORDER" | grep "$file" | awk '{print $1}' | sed "$sed_num")
+        mrk=$(echo "$ORDER" | grep "$file" | awk '{print $1}' | sed -n "$sed_mrk")
         dir=$(dirname $file)
         bsn=$(basename $file)
         OUT=$(printf "%s%s %s%s" "${mag}$num${end}" \
