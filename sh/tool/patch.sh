@@ -50,25 +50,28 @@ print_colored() {
         msg="patches in default apply patch order:\n"
         tmpd="${TMPDIR:-/tmp/}$(basename $0)" && mkdir -p "$tmpd"
         tmpf_num=$(mktemp "$tmpd/XXXX")
+        tmpf_mrk=$(mktemp "$tmpd/XXXX")
         tmpf_dir=$(mktemp "$tmpd/XXXX")
         tmpf_bsn=$(mktemp "$tmpd/XXXX")
-        echo "$arg" | awk '{print $1}' > "$tmpf_num"
+        echo "$arg" | awk '{print $1}' | sed "s/.$//" > "$tmpf_num"
+        echo "$arg" | awk '{print $1}' | sed -n 's/'"[[:digit:]]*$NLS$SEP"'\(.\).*$/\1/p' > "$tmpf_mrk"
         echo "$arg" | sed "s/^.*[ ]//g; s/[^/]*$//g" > "$tmpf_dir"
         echo "$arg" | sed "s/^.*[/]//g" > "$tmpf_bsn"
         # colorize columns
-        OUT=$(paste -d'\t' "$tmpf_num" "$tmpf_dir" "$tmpf_bsn" | awk '
+        OUT=$(paste -d' ' "$tmpf_num" "$tmpf_mrk" "$tmpf_dir" "$tmpf_bsn" | awk '
             BEGIN {
                 FPAT = "([[:space:]]*[^[:space:]]+)";
                 OFS = "";
             }
             {
                 $1 = "'${mag}'" $1 "'${end}'";
-                $2 = "'${blu}'" $2 "'${end}'";
-                $3 = "'${cyn}'" $3 "'${end}'";
+                $2 = "'${red}'" $2 "'${end}'";
+                $3 = "'${blu}'" $3 "'${end}'";
+                $4 = "'${cyn}'" $4 "'${end}'";
                 print
             }
-        ' | column -t)
-        rm -f "$tmpf_num" "$tmpf_dir" "$tmpf_bsn" # delete the temporary files
+        ' | column -t -o' ')
+        rm -f "$tmpf_num" "$tmpf_mrk" "$tmpf_dir" "$tmpf_bsn" # delete the temporary files
         rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
     else
         file="$1"
@@ -77,10 +80,12 @@ print_colored() {
             exit 1
         fi
         msg=""
-        num=$(echo "$ORDER" | grep "$file" | awk '{print $1}')
+        num=$(echo "$ORDER" | grep "$file" | awk '{print $1}' | sed "s/.$//")
+        mrk=$(echo "$ORDER" | grep "$file" | awk '{print $1}' | sed -n 's/'"[[:digit:]]*$NLS$SEP"'\(.\).*$/\1/p')
         dir=$(dirname $file)
         bsn=$(basename $file)
-        OUT=$(printf "%s  %s%s" "${mag}$num${end}" \
+        OUT=$(printf "%s%s %s%s" "${mag}$num${end}" \
+                                "${red}$mrk${end}" \
                                 "${blu}$dir/${end}" \
                                 "${cyn}$bsn${end}")
     fi
