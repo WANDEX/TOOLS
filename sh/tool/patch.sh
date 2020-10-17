@@ -72,7 +72,7 @@ print_colored() {
                 $4 = "'${cyn}'" $4 "'${end}'";
                 print
             }
-        ' | column -t -o' ' | sed 's/[ ]//1; s/[ ]//2') # replace N occurrence
+        ' | sed 's/[ ]//3; s/[ ]//1' | column -t -o' ') # replace N occurrence
         rm -f "$tmpf_num" "$tmpf_mrk" "$tmpf_dir" "$tmpf_bsn" # delete the temporary files
         rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
     else
