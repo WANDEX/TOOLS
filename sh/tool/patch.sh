@@ -189,7 +189,11 @@ validate() {
     fi
     [[ $solo_n ]] && SA="ONLY this patch?" || SA="ALL patches?"
     Q="$RA $SA [y/n] "
-    read -p "$Q" -n 1 -r
+    if [[ $INSIDE_READ_LINE_LOOP -eq 1 ]]; then
+        read -p "$Q" -n 1 -r <&$IN
+    else
+        read -p "$Q" -n 1 -r
+    fi
     echo "" # move to a new line
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         # handle exits from shell or function but don't exit interactive shell
@@ -248,7 +252,11 @@ cmmnd() {
                 make clean && echo "${cyn}make clean [finished]${end}"
                 print_colored "$file"
                 while true; do
-                    read -p "Apply/Reverse this patch? [a/r] " -n 1 -r
+                    if [[ $INSIDE_READ_LINE_LOOP -eq 1 ]]; then
+                        read -p "Apply/Reverse this patch? [a/r] " -n 1 -r <&$IN
+                    else
+                        read -p "Apply/Reverse this patch? [a/r] " -n 1 -r
+                    fi
                     echo "" # move to a new line
                     case "$REPLY" in
                         [Aa]*) R=(); break;;
@@ -283,6 +291,9 @@ main() {
     if [[ $solo_n ]]; then # if variable defined
         cmmnd $solo_n
     else
+        INSIDE_READ_LINE_LOOP=1
+        IN=3
+        exec 3<&0 # N=IN, for 'read commands' inside read line loop
         # read line by line
         while IFS= read -r line; do
             cmmnd "$line"
