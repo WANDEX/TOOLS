@@ -15,6 +15,7 @@ OPTIONS
     -m, --mark      Select patches found by mark and apply/reject all
     -R, --reverse   Reverse list of patches and apply 'patch --reverse' option:
                     Assume patches were created with old and new files swapped.
+    -S, --select    Select patches found by ... in their file path (dir name etc.)
     -s, --solo      Single shot mode for one of the patches from --list,
                     '-s N', by default it is assumed that this patch is not applied!
                     first usage - apply patch, second - reverse patch, and so forth.
@@ -106,8 +107,8 @@ add_patch() {
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=a:hlm:Rs:
-    LONG=add:,help,list,mark:,reverse,solo:,dry-run,init
+    SHORT=a:hlm:RS:s:
+    LONG=add:,help,list,mark:,reverse,select:,solo:,dry-run,init
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     debug=0
@@ -135,6 +136,12 @@ get_opt() {
         -R|--reverse)
             R=(--reverse)
             ORDER=$(echo "$ORDER" | tac)
+            ;;
+        -S|--select)
+            shift
+            ORDER=$(echo "$ORDER" | grep -i "$1")
+            print_colored all
+            printf "${mag}[${end}${red}$1${mag}]${end} ^ ABOVE PATCHES SELECTED\n\n"
             ;;
         -s|--solo)
             shift
