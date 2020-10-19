@@ -50,7 +50,7 @@ print_colored() {
     sed_mrk="s/[[:digit:]]*$NLS$SEP\(.\).*$/\1/p"
     if [[ $1 == all ]]; then
         arg="$ORDER"
-        msg="patches in default apply patch order:\n"
+        msg="patch order:\n"
         tmpd="${TMPDIR:-/tmp/}$(basename $0)" && mkdir -p "$tmpd"
         tmpf_num=$(mktemp "$tmpd/XXXX")
         tmpf_mrk=$(mktemp "$tmpd/XXXX")
@@ -185,6 +185,21 @@ non_existence_msg() {
     fi
 }
 
+reverse_order() {
+    Q="Reverse Order of Patches? ${yel}(from last to first)${end} [y/n] "
+    while true; do
+        read -p "$Q" -n 1 -r
+        case "$REPLY" in
+            [Yy]*) ORDER=$(echo "$ORDER" | tac); break;;
+            [Nn]*) break;;
+            *) echo "${red}I don't get it.${end}";;
+        esac
+    done
+    printf "\nFollowing order will be used, "
+    print_colored all
+    echo ""
+}
+
 validate() {
     # if variable defined
     if [[ $R ]]; then
@@ -301,6 +316,7 @@ main() {
         INSIDE_READ_LINE_LOOP=1
         IN=3
         exec 3<&0 # N=IN, for 'read commands' inside read line loop
+        reverse_order
         # read line by line
         while IFS= read -r line; do
             cmmnd "$line"
