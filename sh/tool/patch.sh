@@ -12,6 +12,7 @@ OPTIONS
     -a, --add       Add patch to the end of active_patch_list file
     -h, --help      Display help
     -l, --list      Print list of patches in default order
+    -m, --mark      Select patches found by mark and apply/reject all
     -R, --reverse   Reverse list of patches and apply 'patch --reverse' option:
                     Assume patches were created with old and new files swapped.
     -s, --solo      Single shot mode for one of the patches from --list,
@@ -105,8 +106,8 @@ add_patch() {
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=a:hlRs:
-    LONG=add:,help,list,reverse,solo:,dry-run,init
+    SHORT=a:hlm:Rs:
+    LONG=add:,help,list,mark:,reverse,solo:,dry-run,init
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     debug=0
@@ -124,6 +125,12 @@ get_opt() {
         -l|--list)
             print_colored all
             exit 0
+            ;;
+        -m|--mark)
+            shift
+            ORDER=$(echo "$ORDER" | grep -i "$NLS$SEP$1")
+            print_colored all
+            printf "${mag}[${end}${red}$1${mag}]${end} ^ ABOVE PATCHES SELECTED BY MARK\n\n"
             ;;
         -R|--reverse)
             R=(--reverse)
@@ -274,7 +281,7 @@ cmmnd() {
         esac
     fi
     print_colored "$file"
-    [[ $debug -eq 1 ]] && echo "${mag}file found by $ET:${end}"
+    [[ $debug -eq 1 ]] && echo "${mag}file found by:$ET${end}"
     validate
     patch -f "${R[@]}" "${dry[@]}" < "$file"
     case "$?" in # check patch exit codes
