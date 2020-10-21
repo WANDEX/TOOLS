@@ -19,6 +19,7 @@ OPTIONS
     -s, --solo      Single shot mode for one of the patches from --list,
                     '-s N', by default it is assumed that this patch is not applied!
                     first usage - apply patch, second - reverse patch, and so forth.
+    -y, --yes       Always assume that the answer is yes before each patch command
     --dry-run       Print the results of applying the patches without actually
                     changing any files.
                     ${red}(each patch file independently, not a cascade of changes)${end}
@@ -112,6 +113,7 @@ get_opt() {
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     debug=0
+    YES=0
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
@@ -160,6 +162,9 @@ get_opt() {
                 echo "[$solo_n] - there is no such list item related to this number. exit"
                 exit 1
             fi
+            ;;
+        -y|--yes)
+            YES=1
             ;;
         --dry-run)
             dry=(--dry-run)
@@ -216,17 +221,19 @@ validate() {
         RA="Apply"
         M="A"
     fi
-    [[ $solo_n ]] && SA="ONLY this patch?" || SA="ALL patches?"
-    Q="$RA $SA [y/n] "
-    if [[ $INSIDE_READ_LINE_LOOP -eq 1 ]]; then
-        read -p "$Q" -n 1 -r <&$IN
-    else
-        read -p "$Q" -n 1 -r
-    fi
-    echo "" # move to a new line
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        # handle exits from shell or function but don't exit interactive shell
-        [[ "$0" = "$BASH_SOURCE" ]] && exit 0 || return 1
+    if [[ $YES -eq 0 ]]; then
+        [[ $solo_n ]] && SA="ONLY this patch?" || SA="ALL patches?"
+        Q="$RA $SA [y/n] "
+        if [[ $INSIDE_READ_LINE_LOOP -eq 1 ]]; then
+            read -p "$Q" -n 1 -r <&$IN
+        else
+            read -p "$Q" -n 1 -r
+        fi
+        echo "" # move to a new line
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            # handle exits from shell or function but don't exit interactive shell
+            [[ "$0" = "$BASH_SOURCE" ]] && exit 0 || return 1
+        fi
     fi
 }
 
