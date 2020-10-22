@@ -289,7 +289,7 @@ cmmnd() {
         ET="string"
     else
         # arg is number
-        GREP=$(echo "$ORDER" | grep $arg"$NLS$SEP")
+        GREP=$(echo "$ORDER" | grep "^[ ]*$arg$NLS$SEP")
         ET="number"
     fi
     # discard first column & trim leading spaces
