@@ -84,7 +84,7 @@ print_colored() {
             echo "ERROR: file variable is empty in function call. exit"
             exit 1
         fi
-        msg=""
+        msg="\n"
         num=$(echo "$ORDER" | grep "$file" | awk '{print $1}' | sed "$sed_num")
         mrk=$(echo "$ORDER" | grep "$file" | awk '{print $1}' | sed -n "$sed_mrk")
         dir=$(dirname $file)
@@ -94,6 +94,7 @@ print_colored() {
                                 "${blu}$dir/${end}" \
                                 "${cyn}$bsn${end}")
     fi
+    [[ $solo_n ]] && msg=""
     printf "$msg""$OUT""\n"
 }
 
@@ -108,10 +109,11 @@ add_patch() {
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=a:hlm:RS:s:
-    LONG=add:,help,list,mark:,reverse,select:,solo:,dry-run,init
+    SHORT=a:hlm:RS:s:y
+    LONG=add:,help,list,mark:,reverse,select:,solo:,yes,dry-run,init
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
+    make_clean=0
     debug=0
     YES=0
     eval set -- "$OPTIONS"
@@ -210,19 +212,24 @@ reverse_order() {
     printf "\nFollowing order will be used, "
     print_colored all
     echo ""
+    if [[ $YES -eq 1 ]]; then
+        echo "After confirmation, ${yel}all patches will be applied/reversed at once!${end}"
+        echo "${cyn}Based on${end} previous individual patch history ${red}mark${end}."
+        Q="Proceed? [y/n] "
+        while true; do
+            read -p "$Q" -n 1 -r
+            case "$REPLY" in
+                [Yy]*) break;;
+                [Nn]*) echo "exit." && exit 0;;
+                *) echo "${red}I don't get it.${end}";;
+            esac
+        done
+    fi
 }
 
 validate() {
-    # if variable defined
-    if [[ $R ]]; then
-        RA="Reverse"
-        M="R"
-    else
-        RA="Apply"
-        M="A"
-    fi
     if [[ $YES -eq 0 ]]; then
-        [[ $solo_n ]] && SA="ONLY this patch?" || SA="ALL patches?"
+        [[ $solo_n ]] && SA="ONLY this patch?" || SA="this patch?"
         Q="$RA $SA [y/n] "
         if [[ $INSIDE_READ_LINE_LOOP -eq 1 ]]; then
             read -p "$Q" -n 1 -r <&$IN
@@ -262,6 +269,16 @@ add_mark() {
     [[ $debug -eq 1 ]] && echo "mark:${red}$mark${end} SET!"
 }
 
+patch_cmd() {
+    file="$1"
+    patch -f "${R[@]}" "${dry[@]}" < "$file"
+    case "$?" in # check patch exit codes
+        0) add_mark "$file" "$M";;
+        1) add_mark "$file" "F";;
+        *) echo "[$?]:${red}SERIOUS ERROR!${end}";;
+    esac
+}
+
 cmmnd() {
     arg=$1
     cd "$GITRDIR" # cd to root git dir
@@ -280,12 +297,12 @@ cmmnd() {
     if [[ ! $R ]]; then # if -R option not explicitly specified
         # automatic toggle behavior of patch -R (reverse/apply) option
         case "$(get_patch_mark "$file")" in
-            A) R=(--reverse);;
-            N) R=();;
-            R) R=();;
+            A) R=(--reverse); M="R"; RA="Reverse";;
+            N) R=(); M="A"; RA="Apply";;
+            R) R=(); M="A"; RA="Apply";;
             F)
                 echo "Previously this patch introduced ${red}FAILED Hunks!${end}"
-                make clean && echo "${cyn}make clean [finished]${end}"
+                [[ $make_clean -eq 1 ]] && make clean && echo "${cyn}make clean [finished]${end}"
                 print_colored "$file"
                 while true; do
                     if [[ $INSIDE_READ_LINE_LOOP -eq 1 ]]; then
@@ -295,8 +312,8 @@ cmmnd() {
                     fi
                     echo "" # move to a new line
                     case "$REPLY" in
-                        [Aa]*) R=(); break;;
-                        [Rr]*) R=(--reverse); break;;
+                        [Aa]*) R=(); M="A"; RA="Apply"; break;;
+                        [Rr]*) R=(--reverse); M="R"; RA="Reverse"; break;;
                         *) echo "${red}I don't get it.${end}";;
                     esac
                 done
@@ -311,13 +328,6 @@ cmmnd() {
     fi
     print_colored "$file"
     [[ $debug -eq 1 ]] && echo "${mag}file found by:$ET${end}"
-    validate
-    patch -f "${R[@]}" "${dry[@]}" < "$file"
-    case "$?" in # check patch exit codes
-        0) add_mark "$file" "$M";;
-        1) add_mark "$file" "F";;
-        *) echo "[$?]:${red}SERIOUS ERROR!${end}";;
-    esac
 }
 
 main() {
@@ -326,6 +336,8 @@ main() {
     non_existence_msg
     if [[ $solo_n ]]; then # if variable defined
         cmmnd $solo_n
+        validate
+        patch_cmd "$file"
     else
         INSIDE_READ_LINE_LOOP=1
         IN=3
@@ -334,6 +346,8 @@ main() {
         # read line by line
         while IFS= read -r line; do
             cmmnd "$line"
+            validate
+            patch_cmd "$file"
         done <<< "$ORDER"
         echo "${grn}END OF PATCH LIST REACHED${end}"
     fi
