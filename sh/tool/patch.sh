@@ -291,7 +291,7 @@ statistic() {
 
 patch_cmd() {
     file="$1"
-    patch -f "${R[@]}" "${dry[@]}" < "$file"
+    patch -p1 -f "${R[@]}" "${dry[@]}" < "$file"
     case "$?" in # check patch exit codes
         0) statistic 0; add_mark "$file" "$M";;
         1) statistic 1; add_mark "$file" "F";;
