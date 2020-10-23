@@ -3,7 +3,9 @@
 # to keep the stacking order of the patches.
 
 red=$'\e[1;31m'; grn=$'\e[1;32m'; yel=$'\e[1;33m'; blu=$'\e[1;34m'; mag=$'\e[1;35m'; cyn=$'\e[1;36m'; end=$'\e[0m'
+red_i=$'\e[1;41m'; grn_i=$'\e[1;42m'; yel_i=$'\e[1;43m'; blu_i=$'\e[1;44m'; mag_i=$'\e[1;45m'; cyn_i=$'\e[1;46m'; def_i=$'\e[1;7m'
 SEP='|'; NLS=')'
+ST_S=0; ST_F=0; ST_E=0; ST_TOTAL=0
 
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
@@ -113,9 +115,11 @@ get_opt() {
     LONG=add:,help,list,mark:,reverse,select:,solo:,yes,dry-run,init
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
-    make_clean=0
+    make_clean=1
     debug=0
     YES=0
+    STATS_FULL_ON=1
+    STATS_NUMS_ON=1
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
@@ -269,13 +273,29 @@ add_mark() {
     [[ $debug -eq 1 ]] && echo "mark:${red}$mark${end} SET!"
 }
 
+statistic() {
+    exit_code="$1"
+    case "$exit_code" in
+        0) ST_S=$(($ST_S + 1)); echo "${grn_i}[OK]${end}^";;
+        1) ST_F=$(($ST_F + 1)); echo "${red_i}[FAILED]${end}^";;
+        2) ST_E=$(($ST_E + 1)); echo "${red_i}[ERROR]${end}^";;
+    esac
+    ST_TOTAL=$(($ST_TOTAL + 1))
+    [[ $ST_F -eq 0 ]] && ST_F_MSG="" || ST_F_MSG="${red_i} FAILED:$ST_F ${end}"
+    [[ $ST_E -eq 0 ]] && ST_E_MSG="" || ST_E_MSG="${red_i} ERROR:$ST_E ${end}"
+    [[ $ST_S -eq $ST_TOTAL ]] && ST_S_MSG="" || ST_S_MSG="${grn_i} SUCCESS:$ST_S ${end}"
+    STATS_FULL="$ST_S_MSG""$ST_F_MSG""$ST_E_MSG""${def_i} / ${end}""${cyn_i} $ST_TOTAL ${end}"
+    [[ "$ST_S_MSG" == "" ]] && STATS_FULL="${grn_i}[OK]${end}${def_i} ALL PATCHES ARE ${end}${grn_i}[OK]${end}"
+    STATS_NUMS="${cyn_i} [$ST_S/$ST_TOTAL] ${end}"
+}
+
 patch_cmd() {
     file="$1"
     patch -f "${R[@]}" "${dry[@]}" < "$file"
     case "$?" in # check patch exit codes
-        0) add_mark "$file" "$M";;
-        1) add_mark "$file" "F";;
-        *) echo "[$?]:${red}SERIOUS ERROR!${end}";;
+        0) statistic 0; add_mark "$file" "$M";;
+        1) statistic 1; add_mark "$file" "F";;
+        *) statistic 2; echo "[$?]:${red}SERIOUS ERROR!${end}";;
     esac
 }
 
@@ -349,6 +369,9 @@ main() {
             validate
             patch_cmd "$file"
         done <<< "$ORDER"
+        echo ""
+        [[ $STATS_FULL_ON -eq 1 ]] && printf "$STATS_FULL"
+        [[ $STATS_NUMS_ON -eq 1 ]] && printf "$STATS_NUMS\n"
         echo "${grn}END OF PATCH LIST REACHED${end}"
     fi
 }
