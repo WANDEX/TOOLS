@@ -266,8 +266,8 @@ add_mark() {
     mark="$2"
     lnum=$(get_line_num "$patch_file_path")
     if [[ "$mark" == F ]]; then
-        echo "${blu}Patch contained${end} ${red}FAILED Hunk${end}"
-        echo "${blu}and marked as:${end}${red}F${end}"
+        printf "${blu}Patch contained${end} ${red}FAILED Hunk${end}"
+        printf "${blu} and marked as:${end}${red}F${end}\n"
     fi
     [[ ! $dry ]] && sed -i $lnum"s/^$SEP./$SEP$mark/" "$FILE" &&
     [[ $debug -eq 1 ]] && echo "mark:${red}$mark${end} SET!"
@@ -321,8 +321,8 @@ cmmnd() {
             N) R=(); M="A"; RA="Apply";;
             R) R=(); M="A"; RA="Apply";;
             F)
-                echo "Previously this patch introduced ${red}FAILED Hunks!${end}"
-                [[ $make_clean -eq 1 ]] && make clean && echo "${cyn}make clean [finished]${end}"
+                printf "\nPreviously this patch introduced ${red}FAILED Hunks!${end}\n"
+                [[ $make_clean -eq 1 ]] && make clean && printf "${cyn}make clean [finished]${end}\n"
                 print_colored "$file"
                 while true; do
                     if [[ $INSIDE_READ_LINE_LOOP -eq 1 ]]; then
@@ -372,8 +372,8 @@ main() {
         echo ""
         [[ $STATS_FULL_ON -eq 1 ]] && printf "$STATS_FULL"
         [[ $STATS_NUMS_ON -eq 1 ]] && printf "$STATS_NUMS\n"
-        echo "${grn}END OF PATCH LIST REACHED${end}"
     fi
 }
 
 main "$@"
+
