@@ -120,6 +120,7 @@ get_opt() {
     YES=0
     STATS_FULL_ON=1
     STATS_NUMS_ON=1
+    STATS_N_LONG=1
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
@@ -284,9 +285,11 @@ statistic() {
     [[ $ST_F -eq 0 ]] && ST_F_MSG="" || ST_F_MSG="${red_i} FAILED:$ST_F ${end}"
     [[ $ST_E -eq 0 ]] && ST_E_MSG="" || ST_E_MSG="${red_i} ERROR:$ST_E ${end}"
     [[ $ST_S -eq $ST_TOTAL ]] && ST_S_MSG="" || ST_S_MSG="${grn_i} SUCCESS:$ST_S ${end}"
-    STATS_FULL="$ST_S_MSG""$ST_F_MSG""$ST_E_MSG""${def_i} / ${end}""${cyn_i} $ST_TOTAL ${end}"
+    STATS_NUM="${cyn_i} [$ST_S/$ST_TOTAL] ${end}"
+    SSEP="${def_i} / ${end}"
+    [[ $STATS_N_LONG -eq 1 ]] && STATS_NUMS="$SSEP$STATS_NUM" || STATS_NUMS="$SSEP${cyn_i} $ST_TOTAL ${end}"
+    STATS_FULL="$ST_S_MSG""$ST_F_MSG""$ST_E_MSG"
     [[ "$ST_S_MSG" == "" ]] && STATS_FULL="${grn_i}[OK]${end}${def_i} ALL PATCHES ARE ${end}${grn_i}[OK]${end}"
-    STATS_NUMS="${cyn_i} [$ST_S/$ST_TOTAL] ${end}"
 }
 
 patch_cmd() {
