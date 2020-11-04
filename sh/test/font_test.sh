@@ -27,6 +27,14 @@ we had left the ground.
 силуэт зазубренного крыла.
 EOF
 
+# read into variable using 'Here Document' code block
+read -d '' USAGE <<- EOF
+Usage: $(basename $BASH_SOURCE) [OPTION...]
+OPTIONS
+    -f, --family    Get font family of current \$TERMINAL and exit
+    -h, --help      Display help
+EOF
+
 width() { echo "$1" | wc --max-line-length; }
 widths() {
     len_a=$(width "$1")
@@ -53,6 +61,34 @@ else
 fi
 style=$(echo "$font_multiline" | sed -n "/style=/s///p")
 
+get_opt() {
+    # Parse and read OPTIONS command-line options
+    SHORT=fh
+    LONG=family,help
+    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
+    # PLACE FOR OPTION DEFAULTS
+    eval set -- "$OPTIONS"
+    while true; do
+        case "$1" in
+        -f|--family)
+            echo "$family"
+            exit 0
+            ;;
+        -h|--help)
+            echo "$USAGE"
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
+        esac
+        shift
+    done
+}
+
+get_opt "$@"
+
 tmpd="${TMPDIR:-/tmp/}$(basename $0)" && mkdir -p "$tmpd"
 tmpf=$(mktemp "$tmpd/XXXX")
 echo "$TEXT" > "$tmpf"
@@ -70,7 +106,6 @@ OUT=$(paste -d' ' "$tmpf" "$tmpf" "$tmpf" | awk '
 ' | column -t -o' ▏' -N "${def_R}$WR${end},${def_B}$WB${end},${def_I}$WI${end}") # replace N occurrence
 rm -f "$tmpf" # delete the temporary files
 rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
-echo ""
 echo "$OUT"
 echo "$BOXDC"
 printf "\nfamily:${red}$family${end} $sn:${cyn}$size${end} style:${yel}$style${end}\n\n"
