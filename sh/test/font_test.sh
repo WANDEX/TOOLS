@@ -31,8 +31,15 @@ EOF
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
-    -f, --family    Get font family of current \$TERMINAL and exit
+get one option specific for font of the current \$TERMINAL and exit.
+(without option simply print font test)
+    -b, --box       Show/Hide box characters
+    -f, --family    Get font family
     -h, --help      Display help
+    -m, --message   Append custom message to the end of the output
+    -S, --style     Get font style
+    -s, --size      Get font size
+    -t, --typesize  Get font size type - size/pixelsize
 EOF
 
 width() { echo "$1" | wc --max-line-length; }
@@ -59,23 +66,47 @@ else
     sn="size"
     size=$(echo "$font_multiline" | sed -n "/$sn=/s///p")
 fi
-style=$(echo "$font_multiline" | sed -n "/style=/s///p")
+if $(echo "$font_multiline" | grep -q "style="); then
+    style=$(echo "$font_multiline" | sed -n "/style=/s///p")
+else
+    style="Regular"
+fi
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=fh
-    LONG=family,help
+    SHORT=bfhm:Sst
+    LONG=box,family,help,message:,style,size,typesize
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
+    box=0
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
+        -b|--box)
+            [[ $box -eq 1 ]] && box=0 || box=1 # toggle behavior of value
+            ;;
         -f|--family)
             echo "$family"
             exit 0
             ;;
         -h|--help)
             echo "$USAGE"
+            exit 0
+            ;;
+        -m|--message)
+            shift
+            message="$1"
+            ;;
+        -S|--style)
+            echo "$style"
+            exit 0
+            ;;
+        -s|--size)
+            echo "$size"
+            exit 0
+            ;;
+        -t|--typesize)
+            echo "$sn"
             exit 0
             ;;
         --)
@@ -107,6 +138,10 @@ OUT=$(paste -d' ' "$tmpf" "$tmpf" "$tmpf" | awk '
 rm -f "$tmpf" # delete the temporary files
 rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
 echo "$OUT"
-echo "$BOXDC"
-printf "\nfamily:${red}$family${end} $sn:${cyn}$size${end} style:${yel}$style${end}\n\n"
+[[ $box -eq 1 ]] && echo "$BOXDC"
+if [ -z "$message" ]; then
+    printf "\n[xrdb] $TERMINAL.font: ${red}$family${end} $sn:${cyn}$size${end} style:${yel}$style${end}\n\n"
+else
+    printf "\n$message\n\n"
+fi
 
