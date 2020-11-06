@@ -7,6 +7,7 @@ red=$'\e[1;31m'; grn=$'\e[1;32m'; yel=$'\e[1;33m'; blu=$'\e[1;34m'; mag=$'\e[1;3
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
+    -b, --blacklist Comma-separated list of blacklisted font styles
     -f, --font      Get available font family styles for "font family name" or "all"
     -h, --help      Display help
     -s, --styles    Get available font family styles for current \$TERMINAL font
@@ -52,21 +53,12 @@ get_family_styles() {
     else
         fc-list "$1" | grep -o ":style=.*[ ]" | sed "s/:style=//g; s/[ ]*$//g" | sort -u
     fi
-    #; /[Bb]old/d; /[Hh]eavy/d
 }
 
 font_family=$(font_test.sh --family)
 font_typesize=$(font_test.sh --typesize)
 font_size=$(font_test.sh --size)
 font_style=$(font_test.sh --style)
-font_family_styles=$(get_family_styles "$font_family")
-
-tmpd="${TMPDIR:-/tmp/}$(basename $0)" && mkdir -p "$tmpd"
-tmpf=$(mktemp "$tmpd/XXXX")
-echo "$font_family_styles" > "$tmpf"
-common_styles=$(echo "$STYLES" | grep -Fxf "$tmpf" -) # get common lines in predefined sort order
-rm -f "$tmpf" # delete the temporary files
-rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
 
 get_opt() {
     # Parse and read OPTIONS command-line options
@@ -74,7 +66,7 @@ get_opt() {
     LONG=blacklist:,font:,help,style
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
-    blacklist="[Bb]old,[Hh]eavy"
+    blacklist="Semibold,Bold,Extrabold,Heavy"
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
@@ -105,6 +97,19 @@ get_opt() {
 }
 
 get_opt "$@"
+
+tmpd="${TMPDIR:-/tmp/}$(basename $0)" && mkdir -p "$tmpd"
+tmpf=$(mktemp "$tmpd/XXXX")
+
+font_family_styles=$(get_family_styles "$font_family")
+blacklist=$(echo "$blacklist" | sed s/,/\\n/g)
+echo "$font_family_styles" > "$tmpf"
+blacklisted=$(echo "$blacklist" | grep -Fixvf - "$tmpf")
+echo "$blacklisted" > "$tmpf"
+common_styles=$(echo "$STYLES" | grep -Fxf "$tmpf" -) # get common lines in predefined sort order
+
+rm -f "$tmpf" # delete the temporary files
+rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
 
 while IFS= read -r font_style; do
     FONT="$font_family:""$font_typesize=""$font_size"":style=""$font_style"
