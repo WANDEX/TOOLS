@@ -8,7 +8,9 @@ read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
     -b, --blacklist Comma-separated list of blacklisted font styles
-    -f, --font      Get available font family styles for "font family name" or "all"
+    -F, --font      Test specified "font family name" styles
+    -f, --family    Get available font family styles for "font family name" or "all"
+    --families      Get all available font family names
     -h, --help      Display help
     -s, --styles    Get available font family styles for current \$TERMINAL font
 EOF
@@ -18,41 +20,38 @@ EOF
 read -d '' STYLES <<- EOF
 Thin
 Demi
-Extralight
-ExtraLight
 Light
-Semi
-Book
-Medium
-Oblique
-Extra
-Ultra
-Semi Expanded
-Expanded
-Extra Expanded
-Ultra Expanded
-Semi Condensed
+ExtraLight
 Condensed
-Extra Condensed
-Ultra Condensed
-Medium Italic,Bold
-Semibold
+SemiCondensed
+Initials
+ja
+ko
+Mono
+Book
+Regular
+Roman
+Italic
+Oblique
+Medium
+Extra
+Expanded
+Semi
 SemiBold
 Bold
-Bold Oblique,Bold
 Black
-Extrabold
-Extra Bold
 ExtraBold
 Heavy
+Ultra
 EOF
 
 get_family_styles() {
     if [[ $1 == all ]]; then
-        fc-list | grep -o ":style=.*[ ]" | sed "s/:style=//g; s/[ ]*$//g" | sort -u
+        arg=":"
     else
-        fc-list "$1" | grep -o ":style=.*[ ]" | sed "s/:style=//g; s/[ ]*$//g" | sort -u
+        arg="$1"
     fi
+    fc-list "$arg" style | sed "s/:style=//g; s/[ ,].*$//g; /^[ ]*$/d" | sort -u
 }
 
 font_family=$(font_test.sh --family)
@@ -62,11 +61,13 @@ font_style=$(font_test.sh --style)
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=b:f:hs
-    LONG=blacklist:,font:,help,style
+    SHORT=b:F:f:hs
+    LONG=blacklist:,font:,family:,families,help,style
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
-    blacklist="Semibold,Bold,Extrabold,Heavy"
+    otherlist="Italic,Oblique"
+    boldlist="Semibold,Bold,Extrabold,Heavy"
+    blacklist="$otherlist","$boldlist"
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
@@ -74,9 +75,18 @@ get_opt() {
             shift
             blacklist="$1"
             ;;
-        -f|--font)
+        -F|--font)
+            shift
+            font_family="$1"
+            ;;
+        -f|--family)
             shift
             get_family_styles "$1"
+            exit 0
+            ;;
+        --families)
+            shift
+            fc-list : family | sed "s/[,].*$//g; /^[ ]*$/d" | sort -u
             exit 0
             ;;
         -h|--help)
@@ -106,7 +116,7 @@ blacklist=$(echo "$blacklist" | sed s/,/\\n/g)
 echo "$font_family_styles" > "$tmpf"
 blacklisted=$(echo "$blacklist" | grep -Fixvf - "$tmpf")
 echo "$blacklisted" > "$tmpf"
-common_styles=$(echo "$STYLES" | grep -Fxf "$tmpf" -) # get common lines in predefined sort order
+common_styles=$(echo "$STYLES" | grep -Fixf "$tmpf" -) # get common lines in predefined sort order
 
 rm -f "$tmpf" # delete the temporary files
 rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
@@ -114,7 +124,7 @@ rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
 while IFS= read -r font_style; do
     FONT="$font_family:""$font_typesize=""$font_size"":style=""$font_style"
     FONTM="${red}$font_family${end}:""$font_typesize=""${cyn}$font_size${end}"":style=${yel}$font_style${end}"
-    st -t "ffamily[$font_style]" -f "$FONT" -e any_key.sh font_test.sh --message="$FONTM" &
-    sleep 0.1
+    st -t "ffamily [$font_style]" -f "$FONT" -e any_key.sh font_test.sh --message="$FONTM" &
+    sleep 0.05
 done <<< "$common_styles"
 
