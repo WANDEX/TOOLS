@@ -21,6 +21,7 @@ get_opt() {
     # PLACE FOR OPTION DEFAULTS
     OUT="$HOME"'/Films/'
     END=1      # youtube-dl --playlist-end > get first N items from playlist
+    ENDOPT=0
     EXT='webm' # prefer certain extension over FALLBACK in youtube-dl
     QLT='1080' # video height cap, will be less if unavailable in youtube-dl
     URL="$(xclip -selection clipboard -out)"
@@ -42,6 +43,7 @@ get_opt() {
                     ;;
                 *) END=$1 ;;
             esac
+            ENDOPT=1
             ;;
         -h|--help)
             echo "$USAGE"
@@ -120,6 +122,18 @@ ytdl() {
 
 main() {
     ytdl_check "$URL"
+    if [[ $ENDOPT -eq 0 ]]; then
+        Q="Download all videos [y/n]? "
+        while true; do
+            read -p "$Q" -n 1 -r
+            echo "" # move to a new line
+            case "$REPLY" in
+                [Yy]*) END=-1; break;;
+                [Nn]*) END=1; break;;
+                *) echo "I don't get it.";;
+            esac
+        done
+    fi
     ytdl "$@"
 }
 
