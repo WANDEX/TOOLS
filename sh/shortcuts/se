@@ -1,0 +1,5 @@
+#!/bin/sh
+# shortcut - [e] stands for $EDITOR
+
+MATCH=$(s "$1" --pass-through --exclude-dirs)
+"$EDITOR" "$MATCH"
