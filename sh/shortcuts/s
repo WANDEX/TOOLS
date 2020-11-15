@@ -17,12 +17,13 @@ OPTIONS
     -h, --help          Display help
     -l, --list          Show list of all shortcuts
     -p, --pass-through  Print raw path as output
+    --exclude-dirs      Exclude paths with directories as last element - /
 EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
     SHORT=ehlp
-    LONG=edit,help,list,pass-through
+    LONG=edit,help,list,pass-through,exclude-dirs
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     eval set -- "$OPTIONS"
@@ -41,6 +42,9 @@ get_opt() {
             ;;
         -p|--pass-through)
             passthrough=1
+            ;;
+        --exclude-dirs)
+            SHORTCUTS=$(echo "$SHORTCUTS" | sed "/.*\/[\"']$/d")
             ;;
         --)
             shift
@@ -89,10 +93,7 @@ else
             exit 1
         fi
     elif [[ $dd -eq 1 ]]; then
-        if [[ -f $MATCH ]]; then
-            # remove file from end of the path
-            MATCH=$(dirname "$MATCH")
-        fi
+        [[ -f $MATCH ]] && MATCH=$(dirname "$MATCH") # remove file from end of the path
         if [[ -d $MATCH ]]; then
             Q="${yel}c${end}d/${yel}r${end}anger? [c/r] "
             read -p "$Q" -n 1 -r
