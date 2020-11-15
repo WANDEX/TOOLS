@@ -59,24 +59,27 @@ if [[ $passthrough -eq 1 ]]; then
     echo "$MATCH"
 else
     Q="as ${yel}f${end}ile / as ${yel}d${end}ir? [f/d] "
-    while true; do
-        read -p "$Q" -n 1 -r
-        echo "" # move to a new line
-        case "$REPLY" in
-            [Ff]*) ff=1; break;;
-            [Dd]*) dd=1; break;;
-            *) echo "${red}I don't get it.${end}";;
-        esac
-    done
+    if [[ -d $MATCH ]]; then
+        dd=1
+    else
+        while true; do
+            read -p "$Q" -n 1 -r
+            echo "" # move to a new line
+            case "$REPLY" in
+                [Ff]*) ff=1; break;;
+                [Dd]*) dd=1; break;;
+                *) echo "${red}I don't get it.${end}";;
+            esac
+        done
+    fi
     if [[ $ff -eq 1 ]]; then
-        if [[ -f "$MATCH" ]]; then
-            echo "fm"
+        if [[ -f $MATCH ]]; then
             Q="\$${yel}E${end}DITOR / \$${yel}P${end}AGER? [e/p] "
             read -p "$Q" -n 1 -r
             echo "" # move to a new line
             case "$REPLY" in
-                [Ee]*) exec $EDITOR "$MATCH";;
-                [Pp]*) exec $PAGER "$MATCH";;
+                [Ee]*) "$EDITOR" "$MATCH";;
+                [Pp]*) cat "$MATCH" | page;;
                 *) echo "${red}I don't get it.${end}";;
             esac
         else
@@ -88,14 +91,14 @@ else
             # remove file from end of the path
             MATCH=$(dirname "$MATCH")
         fi
-        echo "$MATCH"
         if [[ -d $MATCH ]]; then
             Q="${yel}c${end}d/${yel}r${end}anger? [c/r] "
             read -p "$Q" -n 1 -r
             echo "" # move to a new line
             case "$REPLY" in
-                [Cc]*) cd "$MATCH" && exec $SHELL;;
-                [Rr]*) exec ranger "$MATCH";;
+                #[Cc]*) cd "$MATCH" && exec $SHELL;; # creates subshell!
+                [Cc]*) echo "cd $MATCH" | xclip && $(sleep 1 && xdotool click 2) & ;; # cd to pasted dir
+                [Rr]*) ranger "$MATCH";;
                 *) echo "${red}I don't get it.${end}";;
             esac
         else
