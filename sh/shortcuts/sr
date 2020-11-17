@@ -1,5 +1,5 @@
 #!/bin/sh
-# shortcut - [cd] stands for cd (cd to pasted dir)
+# shortcut - [r] stands for ranger
 
 MATCH=$(s "$1" --pass-through)
 [[ -f $MATCH ]] && MATCH=$(dirname "$MATCH") # remove file from end of the path
