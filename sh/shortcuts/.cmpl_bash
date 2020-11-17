@@ -1,0 +1,25 @@
+#!/bin/bash
+# shortcuts completion for bash
+# MEMO: source this file in .bashrc to make it work
+
+_shortcut_complete()
+{
+    local cur prev opts excl
+    _get_comp_words_by_ref -n : cur
+
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    case "$(basename $1)" in
+        se*|sp*) excl=(--exclude-dirs);;
+    esac
+    opts="$(s "${excl[@]}" --list | awk '{print $1}')"
+
+    if [ ${COMP_CWORD} = 1 ]; then
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        __ltrim_colon_completions "$cur"
+    fi
+    return 0
+}
+
+complete -F _shortcut_complete {s,scd,se,sp,sr}
