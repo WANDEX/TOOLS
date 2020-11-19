@@ -1,0 +1,9 @@
+#!/bin/sh
+# pomodoro wrapper for rlwrap completion
+
+POMODORO_HOME=${POMODORO_HOME:-"$HOME/Documents/Pomodoro"}
+week=$(date +"week-%V-%Y.txt")
+week_file="$POMODORO_HOME/$week"
+todo_file="$POMODORO_HOME/TODO.txt"
+filter_file="$SCRIPTS/py/rlwrap_filter/remove_from_completion.py"
+rlwrap -i -f "$week_file" -f "$todo_file" -z "$filter_file -f $week_file" pomodoro
