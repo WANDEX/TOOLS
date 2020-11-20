@@ -1,0 +1,1 @@
+/usr/share/rlwrap/filters/rlwrapfilter.py
