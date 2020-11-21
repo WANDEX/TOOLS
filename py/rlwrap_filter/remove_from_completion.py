@@ -14,11 +14,27 @@ import rlwrapfilter
 import argparse
 import pathlib
 import re
+from signal import SIGKILL
+from time import sleep
+from threading import Thread
 
 filter = rlwrapfilter.RlwrapFilter()
 
 filter.help_text = "Usage: rlwrap [-options] -z ] remove_from_completion.py <command>\n"\
                    + " remove from completion list"
+
+
+def kill():
+    """ kill script if parent process pid is changed """
+    original_ppid = os.getppid()
+    while True:
+        sleep(5)
+        if (original_ppid != os.getppid()):
+            os.kill(os.getpid(), SIGKILL)
+
+
+def run():
+    filter.run()
 
 
 def convert(lst):
@@ -43,4 +59,9 @@ blacklist = convert(match)
 
 filter.remove_from_completion_list(*blacklist)
 
-filter.run()
+filter_thread = Thread(target=run, daemon=True)
+ppid_thread = Thread(target=kill, daemon=True)
+filter_thread.start()
+ppid_thread.start()
+filter_thread.join()
+ppid_thread.join()
