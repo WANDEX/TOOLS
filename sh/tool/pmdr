@@ -6,8 +6,16 @@ week=$(date +"week-%V-%Y.txt")
 week_file="$POMODORO_HOME/$week"
 todo_file="$POMODORO_HOME/TODO.txt"
 filter_file="$SCRIPTS/py/rlwrap_filter/remove_from_completion.py"
+
 date_from_to='^.*\d\d:\d\d'
 # why shortwords does not match? (bug of rlwrapfilter.py?)
 shortword='\b\w{,3}\b' # remove words less than N characters
-digits='\d+'
-rlwrap -i -f "$week_file" -f "$todo_file" -z "$filter_file -f $week_file -r '$date_from_to' -r '$shortwords' -r '$digits'" pomodoro
+digits='\d+' # simple digits
+forget_hist_1='^\dm\w*' # 1m06,0m,3mfix etc.
+forget_hist_2='^.*\^\[' # ^[, key^[ etc.
+
+rlwrap -ir \
+    -g "$forget_hist_1" -g "$forget_hist_2" -g "$digits" \
+    -f "$week_file" -f "$todo_file" \
+    -z "$filter_file -f $week_file -r '$date_from_to' -r '$shortwords' -r '$digits'" pomodoro
+
