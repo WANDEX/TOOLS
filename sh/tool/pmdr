@@ -14,6 +14,10 @@ digits='\d+' # simple digits
 forget_hist_1='^\dm\w*' # 1m06,0m,3mfix etc.
 forget_hist_2='^.*\^\[' # ^[, key^[ etc.
 
+# create files if they do not exist
+[ ! -f "$week_file" ] && echo "" >> "$week_file"
+[ ! -f "$todo_file" ] && echo "" >> "$todo_file"
+
 rlwrap -ir \
     -g "$forget_hist_1" -g "$forget_hist_2" -g "$digits" \
     -f "$week_file" -f "$todo_file" \
