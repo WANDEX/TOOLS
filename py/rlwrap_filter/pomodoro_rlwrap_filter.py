@@ -29,14 +29,14 @@ parser.add_argument('--file', '-f', type=str, action='append', help="file path t
 parser.add_argument('--regex', '-r', type=str, action='append', help="match regex to exclude", required=False)
 args = parser.parse_args()
 
-SPECIAL_C = r'[-/\.,:;\'"`<>(){}\[\]]'
+SPECIAL_C = r'[?/|\\.,:;\'"`<>(){}\[\]]'
+NUM_ROW_C = r'[~!@#$%^&+-=]'
 SHORTWORD = r'\b\w{,3}\b'  # match words less than N characters
-REGEXES_L = [SPECIAL_C, SHORTWORD]
+REGEXES_L = [SPECIAL_C, NUM_ROW_C, SHORTWORD]
 
 
 def kill():
     """ kill script if parent process pid is changed """
-    # TODO: Fix it's not working! With new script realization
     original_ppid = os.getppid()
     while True:
         sleep(5)
@@ -85,10 +85,10 @@ def run():
 
 def threads():
     filter_thread = Thread(target=run, daemon=True)
-    filter_thread.start()
-    filter_thread.join()
     ppid_thread = Thread(target=kill, daemon=True)
+    filter_thread.start()
     ppid_thread.start()
+    filter_thread.join()
     ppid_thread.join()
 
 
