@@ -7,7 +7,7 @@ week_file="$POMODORO_HOME/$week"
 todo_file="$POMODORO_HOME/TODO.txt"
 hist="$RLWRAP_HOME/pomodoro_history"
 export RLWRAP_FILTERDIR="$SCRIPTS/py/rlwrap_filter/"
-filter_name="pomodoro_rlwrap_filter.py"
+filter_name="filter_completion.py"
 
 date_from_to='^.*\d\d:\d\d'
 digits='\d+' # simple digits
@@ -20,6 +20,6 @@ digits='\d+' # simple digits
 
 # r - option adds junk characters into completion list at runtime -> after filter!
 # that's why filter cannot remove them
-rlwrap -ir \
+rlwrap -ir -C pomodoro \
     -z "$filter_name -a '$week_file' -a '$todo_file' -a '$hist' \
     -f '$week_file' -r '$date_from_to' -r '$digits'" pomodoro
