@@ -1,4 +1,12 @@
 #!/bin/sh
-# generate qr code based on input text
-curl 'https://qrenco.de/'"${*}"
+# generate qr code based on input text from pipe or arguments
 
+if test -n "$1"; then
+    data="${*}" # arguments
+elif test ! -t 0; then
+    data=$(cat) # /dev/stdin pipe used usually
+else
+    data="" # empty
+fi
+
+printf "$data" | curl -F-=\<- 'https://qrenco.de/'
