@@ -26,10 +26,18 @@ get_opt() {
     LONG=help,image:,margs:,xargs:,outint:,outname:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
-    [ -f "$DEST_PATH" ] && image="$DEST_PATH" # get default image if file exist
     xargs_array=(${C_XARGS}); [ -z "$xargs_array" ] && xargs_array=('--zoom') # if C_XARGS empty
     margs_array=(${C_MARGS}) # get 'magick convert' args from cache
     output='all'
+    # decide which image file to work with (--image option override this)
+    if [ "$#" -gt 0 ]; then
+        image="${*: -1}" # get last element from arguments
+    elif test ! -t 0; then
+        image=$(cat) # /dev/stdin pipe used usually
+        [ ! -e "$image" ] && echo "file taken from -in, does not exist. exit." && exit 1
+    else
+        [ -f "$DEST_PATH" ] && image="$DEST_PATH" # get default image if file exist
+    fi
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
