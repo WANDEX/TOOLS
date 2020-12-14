@@ -1,0 +1,5 @@
+#!/bin/sh
+# get the full path to a random image from the directory
+DIR=${1:-"$HOME/Wallpapers/"}
+find "$DIR" -type f -name "*.jpg" -o -name "*.png" | shuf -n 1
+
