@@ -1,0 +1,4 @@
+#!/bin/sh
+# pipe arguments $1..$N into clipboard and show clipboard content
+echo "${*}" | xclip -sel clip -in && \
+    notify-send -t 3000 -u low "📋clip content:" "\n$(xclip -o -sel clip)"
