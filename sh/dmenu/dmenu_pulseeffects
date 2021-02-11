@@ -1,0 +1,12 @@
+#!/bin/sh
+# select & switch pulseeffects preset.
+CACHE="$CSCRDIR"'/pulse_active_preset'
+OUTPUT_DIR="$HOME"'/.config/PulseEffects/output/'
+presets=$(ls "$OUTPUT_DIR" | cut -f1 -d"." | sort -h)
+chosen=$(echo "$presets" | dmenu -p 'select preset: ' -i)
+[ -z "$chosen" ] && exit 1 # exit if none chosen.
+
+echo "$chosen" > "$CACHE" # update current preset name in cache file
+pulseeffects -l "$chosen" # change preset (real)
+# change at pulseeffects GUI (only preset name)
+gsettings set com.github.wwmm.pulseeffects last-used-output-preset "$chosen"
