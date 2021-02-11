@@ -38,6 +38,6 @@ X_RES_COLOR=$( xrdb -query | grep '*.color'"$COLOR_INT" | awk '{print $2}' )
 # change preset (real)
 pulseeffects -l "$NEW_PRESET_NAME"
 # change at pulseeffects GUI (only preset name)
-gsettings set com.github.wwmm.pulseeffects last-used-preset "$NEW_PRESET_NAME"
+gsettings set com.github.wwmm.pulseeffects last-used-output-preset "$NEW_PRESET_NAME"
 # write to file
 echo -e "$NEW_PRESET_NAME\n$X_RES_COLOR" > "$FILE"
