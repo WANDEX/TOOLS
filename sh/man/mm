@@ -1,26 +1,10 @@
 #!/bin/sh
 # invoke one of a man search scripts located inside file dir
-
-get_list_of_man_scripts() {
-    local abs_dir_path=$(dirname $(realpath "$0"))
-    cd "$abs_dir_path"
-    local scripts=$(ls | grep -vw $(basename "$0")) # excluding this file itself
-    echo "$scripts" | dmenu -i -p 'choose man search script: ' -l 30 | xclip -in || exit 0
-    local selection="$(xclip -out)"
-    script_path="$abs_dir_path"'/'"$selection"
-}
-
-interactive() {
-    if [ -t 0 ]; then
-        sh "$script_path"
-    else
-        $TERMINAL -e "$script_path"
-    fi
-}
-
-main() {
-    get_list_of_man_scripts
-    interactive
-}
-
-main "$@"
+abs_dir_path=$(dirname "$(realpath "$0")")
+cd "$abs_dir_path" || exit
+scripts=$(ls | grep -vw $(basename "$0")) # excluding this file itself
+echo "$scripts" | dmenu -i -p 'choose man search script: ' | xclip -in
+selection="$(xclip -out)"
+script_path="$abs_dir_path"'/'"$selection"
+# if script exist and executable -> execute
+[ -x "$script_path" ] && "$script_path"
