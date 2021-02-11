@@ -1,6 +1,7 @@
 #!/bin/sh
 # search locally and open python doc man page in $MANPAGER
 CACHE_DIR="$HOME"'/.cache/man/python/'
+UPDATE="$CACHE_DIR"'update_cache'
 K_FILE="$CACHE_DIR"'keywords'
 M_FILE="$CACHE_DIR"'modules'
 T_FILE="$CACHE_DIR"'topics'
@@ -8,16 +9,12 @@ A_FILE="$CACHE_DIR"'all'
 
 update_cache() {
     mkdir -p "$CACHE_DIR"
-    python -m pydoc keywords | tail -n +3 | cut -d' ' -f1- --output-delimiter=$'\n' | awk NF \
-        | sort > "$K_FILE" &
-    python -m pydoc modules | tail -n +3 | cut -d' ' -f1- --output-delimiter=$'\n' | awk NF \
-        | sort > "$M_FILE" &
-    python -m pydoc topics | tail -n +3 | cut -d' ' -f1- --output-delimiter=$'\n' | awk NF \
-        | sort > "$T_FILE" &
+    [ ! -f "$UPDATE" ] && touch "$UPDATE" # create menu item for update_cache method
+    python -m pydoc keywords | tail -n +3 | cut -d' ' -f1- --output-delimiter=$'\n' | awk NF | sort > "$K_FILE" &
+    python -m pydoc modules | tail -n +3 | cut -d' ' -f1- --output-delimiter=$'\n' | awk NF | sort > "$M_FILE" &
+    python -m pydoc topics | tail -n +3 | cut -d' ' -f1- --output-delimiter=$'\n' | awk NF | sort > "$T_FILE" &
     wait
-    #cat "$K_FILE" "$M_FILE" "$T_FILE" > "$A_FILE" &
-    ## same
-    ls "$CACHE_DIR"* | grep -vw 'all' | xargs -r cat > "$A_FILE" &
+    ls "$CACHE_DIR"* | grep -vw 'all' | xargs -r cat > "$A_FILE"
 }
 
 interactive() {
@@ -26,17 +23,21 @@ interactive() {
     item=$(echo "$items" | dmenu -p 'enter item to subsearch:' -l 30)
     # substring
     case "$item" in
+        "update_cache")
+            update_cache
+            return 8 # return from function, to run it, after update_cache
+        ;;
         "keywords")
-            local cache=$(cat "$K_FILE")
+            cache=$(cat "$K_FILE")
         ;;
         "modules")
-            local cache=$(cat "$M_FILE")
+            cache=$(cat "$M_FILE")
         ;;
         "topics")
-            local cache=$(cat "$T_FILE")
+            cache=$(cat "$T_FILE")
         ;;
         "all")
-            local cache=$(cat "$A_FILE")
+            cache=$(cat "$A_FILE")
         ;;
         *)
             exit 0
@@ -50,8 +51,8 @@ interactive() {
 }
 
 main() {
-    update_cache &
     interactive
+    [ "$?" -eq 8 ] && interactive # in case the update_cache was selected
 }
 
 main "$@"
