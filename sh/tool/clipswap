@@ -1,0 +1,62 @@
+#!/bin/sh
+# swap clipboard & primary content
+
+# read into variable using 'Here Document' code block
+read -d '' USAGE <<- EOF
+Usage: $(basename $BASH_SOURCE) [OPTION...]
+OPTIONS
+    -h, --help      Display help
+    -p, --paste     Paste primary selection
+    -q, --quiet     Toggle quiet mode without notification
+EOF
+
+get_opt() {
+    # Parse and read OPTIONS command-line options
+    SHORT=hpq
+    LONG=help,paste,quiet
+    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
+    # PLACE FOR OPTION DEFAULTS
+    p=0
+    q=0
+    eval set -- "$OPTIONS"
+    while true; do
+        case "$1" in
+        -h|--help)
+            echo "$USAGE"
+            exit 0
+            ;;
+        -p|--paste)
+            p=1
+            ;;
+        -q|--quiet)
+            [ "$q" -eq 1 ] && q=0 || q=1 # toggle behavior of value
+            ;;
+        --)
+            shift
+            break
+            ;;
+        esac
+        shift
+    done
+}
+
+get_opt "$@"
+
+swapcmd() { xsel -x && xsel -bo | xsel -pi && xsel -so | xsel -bi; }
+
+if [ $p -eq 1 ]; then
+    fwindow=$(xdotool getactivewindow)
+    class=$(xprop -id "$fwindow" WM_CLASS | cut -d '"' -f 2)
+    if [ "$class" = "st" ]; then
+        #xdotool key --clearmodifiers alt+v # paste with keys
+        xdotool click --clearmodifiers 2 # paste with MMB
+    else
+        swapcmd
+        # this xdotool does nothing!
+        xdotool key --clearmodifiers ctrl+v # paste with keys
+        #swapcmd # swap back
+    fi
+else
+    swapcmd
+    [ $q -eq 0 ] && notify-send -u low "📋swap:" "\nP:$(xsel -po)\nC:$(xsel -bo)"
+fi
