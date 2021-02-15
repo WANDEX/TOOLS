@@ -7,9 +7,12 @@ M_FILE="$CACHE_DIR"'modules'
 T_FILE="$CACHE_DIR"'topics'
 A_FILE="$CACHE_DIR"'all'
 
-update_cache() {
+init() {
     mkdir -p "$CACHE_DIR"
     [ ! -f "$UPDATE" ] && touch "$UPDATE" # create menu item for update_cache method
+}
+
+update_cache() {
     python -m pydoc keywords | tail -n +3 | cut -d' ' -f1- --output-delimiter=$'\n' | awk NF | sort > "$K_FILE" &
     python -m pydoc modules | tail -n +3 | cut -d' ' -f1- --output-delimiter=$'\n' | awk NF | sort > "$M_FILE" &
     python -m pydoc topics | tail -n +3 | cut -d' ' -f1- --output-delimiter=$'\n' | awk NF | sort > "$T_FILE" &
@@ -51,6 +54,7 @@ interactive() {
 }
 
 main() {
+    init
     interactive
     [ "$?" -eq 8 ] && interactive # in case the update_cache was selected
 }
