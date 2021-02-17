@@ -7,10 +7,12 @@
 # sudo crontab -e
 # 5 */2 * * * /usr/bin/pacman -Sy --noconfirm && kill -42 $(pidof dwmblocks)
 
-pacman=$(pacman -Qu | wc -l | awk '{print ""$1}')
-aur=$(yay --aur -Qu | wc -l | awk '{print "/"$1}')
+pacman=$(pacman -Qu | wc -l)
+aur=$(yay --aur -Qu | wc -l)
 
-echo "$pacman""$aur"
+if [ "$pacman" -ne 0 ] || [ "$aur" -ne 0 ]; then
+    printf "%s/%s" "$pacman" "$aur"
+fi
 
 write_to_file() {
     packupd_file="$CSCRDIR/non_live_packupd"
