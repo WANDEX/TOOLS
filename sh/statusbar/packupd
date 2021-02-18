@@ -10,8 +10,13 @@
 pacman=$(pacman -Qu | wc -l)
 aur=$(yay --aur -Qu | wc -l)
 
-if [ "$pacman" -ne 0 ] || [ "$aur" -ne 0 ]; then
+if [ "$pacman" -ne 0 ] && [ "$aur" -ne 0 ]; then
     printf "%s/%s" "$pacman" "$aur"
+elif [ "$pacman" -ne 0 ] && [ "$aur" -eq 0 ]; then
+    printf "%s" "$pacman"
+elif [ "$pacman" -eq 0 ] && [ "$aur" -ne 0 ]; then
+    printf "/%s" "$aur"
+    # no else statement because, else -> we do not print at all!
 fi
 
 write_to_file() {
