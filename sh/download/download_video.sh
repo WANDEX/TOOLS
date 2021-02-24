@@ -5,21 +5,22 @@
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
-    -e, --end       If url is playlist - how many items to download (default:1)
-    -h, --help      Display help
-    -p, --path      Destination path where to download
-    -q, --quality   Quality of video/stream
-    -r, --restrict  Restrict filenames to only ASCII characters, and avoid "&" and spaces in filenames
-    -u, --url       URL of video/stream
+    -e, --end           If url is playlist - how many items to download (default:1)
+    -h, --help          Display help
+    -i, --interactive   Explicit interactive playlist end mode
+    -p, --path          Destination path where to download
+    -q, --quality       Quality of video/stream
+    -r, --restrict      Restrict filenames to only ASCII characters, and avoid "&" and spaces in filenames
+    -u, --url           URL of video/stream
 EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=e:hp:rq:u:
-    LONG=end:,help,path:,restrict,quality:,url:
+    SHORT=e:hip:rq:u:
+    LONG=end:,help,interactive,path:,restrict,quality:,url:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
-    OUT="$HOME"'/Films/'
+    OUT="$HOME"'/Films/.yt/'
     END=1      # youtube-dl --playlist-end > get first N items from playlist
     ENDOPT=0
     EXT='webm' # prefer certain extension over FALLBACK in youtube-dl
@@ -43,11 +44,13 @@ get_opt() {
                     ;;
                 *) END=$1 ;;
             esac
-            ENDOPT=1
             ;;
         -h|--help)
             echo "$USAGE"
             exit 0
+            ;;
+        -i|--interactive)
+            [ "$ENDOPT" -eq 1 ] && ENDOPT=0 || ENDOPT=1 # toggle behavior of value
             ;;
         -p|--path)
             shift
@@ -77,13 +80,16 @@ get_opt "$@"
 
 ytdl_check() {
     # youtube-dl URL verification, verify only first item if many
-    check="$(youtube-dl --no-warnings --playlist-end=1 --simulate "$1")"
+    JSON="$(youtube-dl --dump-json --no-warnings --playlist-end=1 "$1")"
     return_code=$?
     if [ "$return_code" -ne 0 ]; then
-        summary="youtube-dl:"
+        summary="youtube-dl ERROR CODE[$return_code]:"
         msg="TERMINATED\nInvalid URL,\nor just the first element from the URL"
         notify-send -t 5000 -u critical "$summary" "$msg"
-        exit 1
+        exit $return_code
+    else
+        RAWOUT=$(echo "$JSON" | ytdl_out_path.sh)
+        OUT="$OUT""$RAWOUT"
     fi
 }
 
@@ -112,7 +118,6 @@ ytdl() {
     FALLBACKVIDEO='bestvideo[height<=?'"$QLT"']'
     FALLBACKAUDIO='bestaudio/best'
     FORMAT="$GLUED"'/'"$FALLBACKVIDEO"'+'"$FALLBACKAUDIO"
-    OUT+='.yt/%(playlist_title)s/%(playlist_index)003d. %(title)s.%(ext)s'
     youtube-dl --ignore-errors --yes-playlist --playlist-end="$END" \
         --write-sub --sub-lang en,ru --sub-format "ass/srt/best" --embed-subs \
         --format "$FORMAT" --output "$OUT" "${restr[@]}" "$URL" && \
@@ -122,7 +127,7 @@ ytdl() {
 
 main() {
     ytdl_check "$URL"
-    if [[ $ENDOPT -eq 0 ]]; then
+    if [ "$ENDOPT" -eq 1 ]; then
         Q="Download all videos [y/n]? "
         while true; do
             read -p "$Q" -n 1 -r
@@ -138,4 +143,3 @@ main() {
 }
 
 main "$@"
-
