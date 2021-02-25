@@ -9,4 +9,4 @@ else
     data="" # empty
 fi
 
-printf "$data" | curl -F-=\<- 'https://qrenco.de/'
+printf "%s" "$data" | curl -F-=\<- 'https://qrenco.de/'
