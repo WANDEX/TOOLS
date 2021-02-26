@@ -78,9 +78,20 @@ get_opt() {
 
 get_opt "$@"
 
+get_index() {
+    # get int index value from url and make array option with it
+    case "$URL" in
+        *"&index="*)
+            ndx=$(echo "$URL" | grep -o "&index=[[:digit:]]*" | sed "s/&index=//")
+            pindex=( --playlist-items "$ndx" )
+        ;;
+    esac
+}
+
 ytdl_check() {
     # youtube-dl URL verification, verify only first item if many
-    JSON="$(youtube-dl --dump-json --no-warnings --playlist-end=1 "$1")"
+    get_index
+    JSON="$(youtube-dl --dump-json --no-warnings "${pindex[@]}" --playlist-end=1 "$1")"
     return_code=$?
     if [ "$return_code" -ne 0 ]; then
         summary="youtube-dl ERROR CODE[$return_code]:"
@@ -118,11 +129,20 @@ ytdl() {
     FALLBACKVIDEO='bestvideo[height<=?'"$QLT"']'
     FALLBACKAUDIO='bestaudio/best'
     FORMAT="$GLUED"'/'"$FALLBACKVIDEO"'+'"$FALLBACKAUDIO"
-    youtube-dl --ignore-errors --yes-playlist --playlist-end="$END" \
+    title="$(echo "$JSON" | jq -r ".title")"
+    fwid=$(xdotool getactivewindow) # get id of the active/focused window
+    dunstify -h "string:x-dunst-stack-tag:dp_$fwid" "[DOWNLOAD][VIDEO][STARTED]($fwid):" "\n$title\n"
+    youtube-dl --console-title --ignore-errors --yes-playlist "${pindex[@]}" --playlist-end="$END" \
         --write-sub --sub-lang en,ru --sub-format "ass/srt/best" --embed-subs \
-        --format "$FORMAT" --output "$OUT" "${restr[@]}" "$URL" && \
-        notify-send -u normal -t 8000 "COMPLETED:" "Downloading and Converting. [VIDEO]" || \
-        notify-send -u critical -t 5000 "ERROR:" "Something gone wrong! [VIDEO]"
+        --format "$FORMAT" --output "$OUT" "${restr[@]}" "$URL"
+    exit_code=$?
+    if [ $exit_code -eq 0 ]; then
+        dunstify -u normal -h "string:x-dunst-stack-tag:dp_$fwid" \
+            "[DOWNLOAD][VIDEO][COMPLETED]" "\n$title\n"
+    else
+        dunstify -u critical -h "string:x-dunst-stack-tag:dp_$fwid" \
+            "[DOWNLOAD][VIDEO][ERROR]:[$exit_code]" "\n$title\n"
+    fi
 }
 
 main() {
