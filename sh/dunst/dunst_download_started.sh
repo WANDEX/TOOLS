@@ -8,13 +8,23 @@ summary="$2"
 body="$3"
 icon="$4"
 urgency="$5"
+progress=0 # initial value (so as not to break the while loop)
+counter=0
+letter="[D]"
+prefix="$letter"
 
 get_summary() {
     wtitle=$(xprop -id "$fwid" WM_NAME | cut -d '"' -f 2) # get window title
     summary=$(echo "$wtitle" | sed "s/youtube-dl[ ]*//") # remove ytdl (removing spaces)
     progress=$(echo "$summary" | sed "s/[.,%].*$//; s/[ ]*//g") # get only int value
-    case "$progress" in # this comes if variable contains non int characters
-        ''|*[!0-9]*) progress=0 ;; # if progress not yet available -> initial value
+    [ "$lindx" -gt 1 ] && prefix="${i}/${lindx}$letter" # 1/3[D]
+    case "$progress" in
+        # this comes if variable contains non int characters
+        # if progress not yet available -> initial value
+        ''|*[!0-9]*)
+            progress=0
+            counter=$(echo "$counter + 1" | bc)
+            ;;
     esac
 }
 
@@ -23,16 +33,21 @@ notify() {
     dunstify -u "$urgency" \
         -h "string:x-dunst-stack-tag:dp_$fwid" \
         -h "int:value:$progress" \
-        "[D] $summary" "$body"
+        "$prefix $summary" "$body"
 }
 
 # get (window id) of the terminal with ytdl download from summary of first notification
 fwid=$(echo "$summary" | grep -o "(.*)" | sed "s/[()]//g")
-progress=0 # initial value (so as not to break the while loop)
-while [ "$progress" -lt 100 ]; do
-    get_summary
-    notify
-    sleep 2
+lindx=$(echo "$summary" | grep -o "{.*}" | sed "s/[{}]//g") # last playlist index
+[ -z "$lindx" ] && lindx=1 # if empty
+for i in $(seq "$lindx"); do
+    while [ "$counter" -lt 10 ] && [ "$progress" -ne 100 ]; do
+        get_summary
+        notify
+        [ "$progress" -gt 90 ] && [ "$i" -ne "$lindx" ] && break
+        sleep 2
+    done
+    counter=0
 done
 # set window title back to $TERMINAL name (because ytdl will leave '...100%...')
 xdotool set_window --name "$TERMINAL" "$fwid"
