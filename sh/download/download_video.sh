@@ -1,6 +1,9 @@
 #!/bin/sh
 # download via youtube-dl video playlist or single video
 
+# get before everything else (to prevent switching to another window)
+fwid=$(xdotool getactivewindow) # get id of the active/focused window
+
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
@@ -95,8 +98,8 @@ ytdl_check() {
     return_code=$?
     if [ "$return_code" -ne 0 ]; then
         summary="youtube-dl ERROR CODE[$return_code]:"
-        msg="TERMINATED\nInvalid URL,\nor just the first element from the URL"
-        notify-send -t 5000 -u critical "$summary" "$msg"
+        msg="TERMINATED Invalid URL,\nor first element from the URL"
+        notify-send -u critical "$summary" "$msg"
         exit $return_code
     else
         RAWOUT=$(echo "$JSON" | ytdl_out_path.sh)
@@ -130,18 +133,37 @@ ytdl() {
     FALLBACKAUDIO='bestaudio/best'
     FORMAT="$GLUED"'/'"$FALLBACKVIDEO"'+'"$FALLBACKAUDIO"
     title="$(echo "$JSON" | jq -r ".title")"
-    fwid=$(xdotool getactivewindow) # get id of the active/focused window
-    dunstify -h "string:x-dunst-stack-tag:dp_$fwid" "[DOWNLOAD][VIDEO][STARTED]($fwid):" "\n$title\n"
+    case "$URL" in
+        *"playlist?list="*) body="$URL" ;;
+        *) body="$title" ;;
+    esac
+    if [ "$END" = "-1" ]; then
+        # last playlist_index num (length)
+        lindx="$(echo "$JSON" | jq -r '.playlist_index' | tail -n 1 | sed "s/[ ]*//g")"
+        case "$lindx" in
+            null|''|*[!0-9]*) lindx=1 ;; # this comes if variable contains non int characters
+        esac
+    else
+        lindx="$END"
+    fi
+    dunstify -h "string:x-dunst-stack-tag:dp_$fwid" "[DOWNLOAD][VIDEO][STARTED]($fwid){$lindx}:" "\n$body\n"
     youtube-dl --console-title --ignore-errors --yes-playlist "${pindex[@]}" --playlist-end="$END" \
         --write-sub --sub-lang en,ru --sub-format "ass/srt/best" --embed-subs \
         --format "$FORMAT" --output "$OUT" "${restr[@]}" "$URL"
     exit_code=$?
     if [ $exit_code -eq 0 ]; then
         dunstify -u normal -h "string:x-dunst-stack-tag:dp_$fwid" \
-            "[DOWNLOAD][VIDEO][COMPLETED]" "\n$title\n"
+            "[DOWNLOAD][VIDEO][COMPLETED]($fwid)" "\n$body\n"
     else
         dunstify -u critical -h "string:x-dunst-stack-tag:dp_$fwid" \
-            "[DOWNLOAD][VIDEO][ERROR]:[$exit_code]" "\n$title\n"
+            "[DOWNLOAD][VIDEO][ERROR]:[$exit_code]" "\n$body\n"
+        # here we fake ->
+        # to exit out of infinite loop inside dunst_download_started.sh
+        xprop -id "$fwid" -set WM_ICON_NAME "DOWNLOAD_COMPLETED"
+        sleep 5 # sleep ->
+        xdotool set_window --name "$TERMINAL" "$fwid" # set name (because ytdl will leave '...100%...')
+        xprop -id "$fwid" -remove WM_ICON_NAME # remove property (as it's default in st)
+        exit "$exit_code"
     fi
 }
 
