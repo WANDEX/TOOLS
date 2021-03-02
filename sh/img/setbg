@@ -1,19 +1,22 @@
 #!/bin/sh
-DEST_PATH="$HOME"'/.config/wallpaper.jpg'
-CACHE="$CSCRDIR"'/setbg'
-C_XARGS=$(cat "$CACHE" | awk 'NR==1')
-C_MARGS=$(cat "$CACHE" | awk 'NR==2')
+DEST_PATH="$HOME/.config/wallpaper.jpg"
+CACHE="$CSCRDIR/setbg"
+C_MCT=$(cat "$CACHE" | awk 'NR==1' | grep -o "[01]") # get MCT flag from cache
+C_XARGS=$(sed -n "/(/,/)/p" "$CACHE" | sed '1d;$d')
+C_MARGS=$(sed -n "/{/,/}/p" "$CACHE" | sed '1d;$d')
 
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
-    -h, --help      Display help
-    -i, --image     Provide wallpaper image
-    -m, --margs     Use 'magick convert' arguments specified 'inside single quotes'
-    -x, --xargs     Set 'xwallpaper' options
-    --outint        Set output name by num from '1' to 'N' connected outputs
-    --outname       Set output name with grep -i like 'VGA', first found if many
+    -c, --clear-margs       Clear magick convert arguments
+    -h, --help              Display help
+    -i, --image             Provide wallpaper image
+    -m, --margs             Use 'magick convert' arguments specified 'inside single quotes'
+    -x, --xargs             Set 'xwallpaper' options
+    --magic-combine-toggle  Toggle combining of magic convert options
+    --outint                Set output name by num from '1' to 'N' connected outputs
+    --outname               Set output name with grep -i like 'VGA', first found if many
 EXAMPLES
     $(basename $BASH_SOURCE) -i image.jpg -x '--maximize' --margs='-colorspace Gray'
     # and to clear margs cache
@@ -22,12 +25,13 @@ EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=hi:m:x:
-    LONG=help,image:,margs:,xargs:,outint:,outname:
+    SHORT=chi:m:x:
+    LONG=clear-margs,help,image:,margs:,xargs:,magic-combine-toggle,outint:,outname:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     xargs_array=(${C_XARGS}); [ -z "$xargs_array" ] && xargs_array=('--zoom') # if C_XARGS empty
     margs_array=(${C_MARGS}) # get 'magick convert' args from cache
+    MCT=${C_MCT:-0}
     output='all'
     # decide which image file to work with (--image option override this)
     if [ "$#" -gt 0 ]; then
@@ -41,6 +45,9 @@ get_opt() {
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
+        -c|--clear-margs)
+            margs_array=()
+            ;;
         -h|--help)
             echo "$USAGE"
             exit 0
@@ -51,11 +58,19 @@ get_opt() {
             ;;
         -m|--margs)
             shift
-            margs_array=($1)
+            if [ "$MCT" -eq 1 ]; then
+                margs_array=( ${margs_array[@]} $1)
+            else
+                margs_array=($1)
+            fi
             ;;
         -x|--xargs)
             shift
             xargs_array=($1)
+            ;;
+        --magic-combine-toggle)
+            [ "$MCT" -eq 1 ] && MCT=0 || MCT=1 # toggle behavior of value
+            dunstify -u low -h "string:x-dunst-stack-tag:setbg" "[setbg] MCT=$MCT" ""
             ;;
         --outint)
             shift
@@ -76,15 +91,24 @@ get_opt() {
 
 get_opt "$@"
 
-if [ ! -z "$margs_array" ]; then
-    printf "magick convert (args):\n"
-    echo "${margs_array[@]}"
+read -d '' cache <<- EOF
+$MCT
+(
+${xargs_array[@]}
+)
+{
+${margs_array[@]}
+}
+EOF
+
+if [ -n "${margs_array[*]}" ]; then
+    printf "magick convert (args):\n%s\n" "${margs_array[*]}"
+    dunstify -u low -h "string:x-dunst-stack-tag:setbg" "[setbg] MCT=$MCT margs:" "\n${margs_array[*]}\n"
     magick convert "$image" "${margs_array[@]}" "$DEST_PATH"
-elif [ ! -z "$image" ]; then
+elif [ -n "$image" ]; then
     cp "$image" "$DEST_PATH"
 fi
 wait
-# write to cache
-echo "${xargs_array[@]}" > "$CACHE"
-echo "${margs_array[@]}" >> "$CACHE"
+
+echo "$cache" > "$CACHE" # write to cache
 xwallpaper --output "$output" "${xargs_array[@]}" "$DEST_PATH"
