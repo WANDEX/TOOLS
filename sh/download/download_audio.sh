@@ -104,6 +104,11 @@ case "$path" in
         OUT="$_kdi"'%(title)s.%(ext)s'
         OPT=( --no-playlist )
     ;;
+    "koda"|"Koda")
+        _koda="$PODCAST"'Koda-Koda/'
+        OUT="$_koda"'%(title)s.%(ext)s'
+        OPT=( --no-playlist )
+    ;;
     "lt"|"launch")
         _lt="$PODCAST"'Launch Tomorrow Podcast/'
         OUT="$_lt"'%(title)s.%(ext)s'
