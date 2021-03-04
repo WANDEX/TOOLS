@@ -100,7 +100,7 @@ else
             printf "$TRM" # remove previous line
             case "$REPLY" in
                 #[Cc]*) cd "$MATCH" && exec $SHELL;; # creates subshell!
-                [Cc]*) printf "cd $MATCH\n" | xclip && $(sleep 1 && xdotool click 2) & ;; # cd to pasted dir
+                [Cc]*) printf "cd %s" "$MATCH" | xclip && $(sleep 1 && xdotool click 2 && xdotool key Return) &;;
                 [Rr]*) ranger "$MATCH";;
                 *) echo "${red}I don't get it.${end}";;
             esac

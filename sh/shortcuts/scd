@@ -2,5 +2,5 @@
 # shortcut - [cd] stands for cd (cd to pasted dir)
 
 MATCH=$(s "$1" --pass-through)
-[[ -f $MATCH ]] && MATCH=$(dirname "$MATCH") # remove file from end of the path
-printf "cd $MATCH\n" | xclip && $(sleep 1 && xdotool click 2) &
+[ -f "$MATCH" ] && MATCH=$(dirname "$MATCH") # remove file from end of the path
+printf "cd %s" "$MATCH" | xclip && $(sleep 1 && xdotool click 2 && xdotool key Return) &
