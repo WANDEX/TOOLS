@@ -5,6 +5,11 @@
 red=$'\e[1;31m'; grn=$'\e[1;32m'; yel=$'\e[1;33m'; blu=$'\e[1;34m'; mag=$'\e[1;35m'; cyn=$'\e[1;36m'; end=$'\e[0m'
 TRM="\r\033[K"
 
+# define CONST variables!
+dd=0
+ff=0
+passthrough=0
+
 FILE="$CONF/shortcuts"
 # remove everything after # character and empty lines with/without spaces
 SHORTCUTS=$(cat "$FILE" | sed "s/[[:space:]]*#.*$//g; /^[[:space:]]*$/d")
@@ -70,7 +75,7 @@ else
         Q="as ${yel}f${end}ile / as ${yel}d${end}ir? [f/d] "
         while true; do
             read -p "$Q" -n 1 -r
-            printf "%s" "$TRM" # remove previous line
+            printf "$TRM%s" "" # remove previous line
             case "$REPLY" in
                 [Ff]*) ff=1; break;;
                 [Dd]*) dd=1; break;;
@@ -78,26 +83,26 @@ else
             esac
         done
     fi
-    if [ $ff -eq 1 ]; then
+    if [ "$ff" -eq 1 ]; then
         if [ -f "$MATCH" ]; then
             Q="\$${yel}E${end}DITOR / \$${yel}P${end}AGER? [e/p] "
             read -p "$Q" -n 1 -r
-            printf "%s" "$TRM" # remove previous line
+            printf "$TRM%s" "" # remove previous line
             case "$REPLY" in
                 [Ee]*) "$EDITOR" "$MATCH";;
-                [Pp]*) cat "$MATCH" | page;;
+                [Pp]*) page < "$MATCH";;
                 *) echo "${red}I don't get it.${end}";;
             esac
         else
             echo "[$MATCH] is not valid file. exit."
             exit 1
         fi
-    elif [ $dd -eq 1 ]; then
+    elif [ "$dd" -eq 1 ]; then
         [ -f "$MATCH" ] && MATCH=$(dirname "$MATCH") # remove file from end of the path
         if [ -d "$MATCH" ]; then
             Q="${yel}c${end}d/${yel}r${end}anger? [c/r] "
             read -p "$Q" -n 1 -r
-            printf "%s" "$TRM" # remove previous line
+            printf "$TRM%s" "" # remove previous line
             case "$REPLY" in
                 #[Cc]*) cd "$MATCH" && exec $SHELL;; # creates subshell!
                 [Cc]*) printf "cd %s" "$MATCH" | xclip && $(sleep 1 && xdotool click 2 && xdotool key Return) &;;
