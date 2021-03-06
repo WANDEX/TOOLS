@@ -57,20 +57,20 @@ get_opt() {
 
 get_opt "$@"
 
-[ ! -z "$1" ] && QUERY="--query='$1" # do exact match
+[ -n "$1" ] && QUERY="--query='$1" # do exact match
 MATCH=$(echo "$SHORTCUTS" | fzf -i --select-1 "${QUERY[@]}" | awk '{print $2}' | sed "s/[\"\']//g")
 MATCH=$(echo "$MATCH" | envsubst)
-if [[ $passthrough -eq 1 ]]; then
+if [ "$passthrough" -eq 1 ]; then
     echo "$MATCH"
     # This should be one of the end branches of the script
 else
-    if [[ -d $MATCH ]]; then
+    if [ -d "$MATCH" ]; then
         dd=1
     else
         Q="as ${yel}f${end}ile / as ${yel}d${end}ir? [f/d] "
         while true; do
             read -p "$Q" -n 1 -r
-            printf "$TRM" # remove previous line
+            printf "%s" "$TRM" # remove previous line
             case "$REPLY" in
                 [Ff]*) ff=1; break;;
                 [Dd]*) dd=1; break;;
@@ -78,11 +78,11 @@ else
             esac
         done
     fi
-    if [[ $ff -eq 1 ]]; then
-        if [[ -f $MATCH ]]; then
+    if [ $ff -eq 1 ]; then
+        if [ -f "$MATCH" ]; then
             Q="\$${yel}E${end}DITOR / \$${yel}P${end}AGER? [e/p] "
             read -p "$Q" -n 1 -r
-            printf "$TRM" # remove previous line
+            printf "%s" "$TRM" # remove previous line
             case "$REPLY" in
                 [Ee]*) "$EDITOR" "$MATCH";;
                 [Pp]*) cat "$MATCH" | page;;
@@ -92,12 +92,12 @@ else
             echo "[$MATCH] is not valid file. exit."
             exit 1
         fi
-    elif [[ $dd -eq 1 ]]; then
-        [[ -f $MATCH ]] && MATCH=$(dirname "$MATCH") # remove file from end of the path
-        if [[ -d $MATCH ]]; then
+    elif [ $dd -eq 1 ]; then
+        [ -f "$MATCH" ] && MATCH=$(dirname "$MATCH") # remove file from end of the path
+        if [ -d "$MATCH" ]; then
             Q="${yel}c${end}d/${yel}r${end}anger? [c/r] "
             read -p "$Q" -n 1 -r
-            printf "$TRM" # remove previous line
+            printf "%s" "$TRM" # remove previous line
             case "$REPLY" in
                 #[Cc]*) cd "$MATCH" && exec $SHELL;; # creates subshell!
                 [Cc]*) printf "cd %s" "$MATCH" | xclip && $(sleep 1 && xdotool click 2 && xdotool key Return) &;;
