@@ -1,0 +1,66 @@
+#!/bin/sh
+# translate dmenu input or clipboard content and show in notification
+
+# read into variable using 'Here Document' code block
+read -d '' USAGE <<- EOF
+Usage: $(basename $BASH_SOURCE) [OPTION...]
+OPTIONS
+    -b, --brief     Show the most relevant translation or its ph. notation only
+    -c, --clip      Translate data from clipboard
+    -h, --help      Display help
+EOF
+
+get_opt() {
+    # Parse and read OPTIONS command-line options
+    SHORT=bch
+    LONG=brief,clip,help
+    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
+    # PLACE FOR OPTION DEFAULTS
+    eval set -- "$OPTIONS"
+    while true; do
+        case "$1" in
+        -b|--brief)
+            brief=( -brief )
+            ;;
+        -c|--clip)
+            clip="$(xclip -selection clipboard -out)"
+            ;;
+        -h|--help)
+            echo "$USAGE"
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
+        esac
+        shift
+    done
+}
+
+get_opt "$@"
+
+if [ -n "$clip" ]; then
+    input="$clip"
+else
+    input=$(echo "" | dmenu -p "translate: ")
+fi
+[ -z "$input" ] && exit 1 # exit if ESC pressed or input is empty.
+identify=$(trans -b -identify "$input")
+case "$identify" in
+    ru) sltl=( -sl ru -tl en ) ;;
+    en) sltl=( -sl en -tl ru ) ;;
+     *) sltl=() ;;
+esac
+
+translate() {
+    trans "${brief[@]}" -no-warn -no-ansi -indent 2 "${sltl[@]}" \
+    -show-original yes -show-original-phonetics no \
+    -show-translation yes -show-translation-phonetics no \
+    -show-prompt-message no -show-languages no \
+    -show-dictionary yes -show-alternatives yes \
+    "$1"
+}
+
+data=$(translate "$input")
+dunstify -u low -h "string:x-dunst-stack-tag:translate" "[tr]" "$data\n"
