@@ -17,6 +17,7 @@ OPTIONS
     --magic-combine-toggle  Toggle combining of magic convert options
     --outint                Set output name by num from '1' to 'N' connected outputs
     --outname               Set output name with grep -i like 'VGA', first found if many
+    --startup               Set default wallpaper image and exit without magick
 EXAMPLES
     $(basename $BASH_SOURCE) -i image.jpg -x '--maximize' --margs='-colorspace Gray'
     # and to clear margs cache
@@ -26,7 +27,7 @@ EOF
 get_opt() {
     # Parse and read OPTIONS command-line options
     SHORT=chi:m:x:
-    LONG=clear-margs,help,image:,margs:,xargs:,magic-combine-toggle,outint:,outname:
+    LONG=clear-margs,help,image:,margs:,xargs:,magic-combine-toggle,outint:,outname:,startup
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     xargs_array=(${C_XARGS}); [ -z "$xargs_array" ] && xargs_array=('--zoom') # if C_XARGS empty
@@ -79,6 +80,10 @@ get_opt() {
         --outname)
             shift
             output=$(xrandr -q | grep -i ' connected' | awk '{print $1}' | grep -i "$1" | awk 'NR==1')
+            ;;
+        --startup)
+            xwallpaper --output "$output" "${xargs_array[@]}" "$DEST_PATH"
+            exit 0
             ;;
         --)
             shift
