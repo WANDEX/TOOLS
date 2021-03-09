@@ -4,6 +4,8 @@ CACHE="$CSCRDIR/setbg"
 C_MCT=$(cat "$CACHE" | awk 'NR==1' | grep -o "[01]") # get MCT flag from cache
 C_XARGS=$(sed -n "/(/,/)/p" "$CACHE" | sed '1d;$d')
 C_MARGS=$(sed -n "/{/,/}/p" "$CACHE" | sed '1d;$d')
+ST_S="string:x-dunst-stack-tag:setbg"
+ST_H="string:x-dunst-stack-tag:hi" # history_ignore
 
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
@@ -14,7 +16,7 @@ OPTIONS
     -i, --image             Provide wallpaper image
     -m, --margs             Use 'magick convert' arguments specified 'inside single quotes'
     -x, --xargs             Set 'xwallpaper' options
-    --magic-combine-toggle  Toggle combining of magic convert options
+    --magic-combine-toggle  Toggle combining of magic convert options and exit
     --outint                Set output name by num from '1' to 'N' connected outputs
     --outname               Set output name with grep -i like 'VGA', first found if many
     --startup               Set default wallpaper image and exit without magick
@@ -71,7 +73,8 @@ get_opt() {
             ;;
         --magic-combine-toggle)
             [ "$MCT" -eq 1 ] && MCT=0 || MCT=1 # toggle behavior of value
-            dunstify -u low -h "string:x-dunst-stack-tag:setbg" "[setbg] MCT=$MCT" ""
+            COMBINE_TOGGLED=1 # flag -> basically check if this variable defined
+            dunstify -u low -h "$ST_S" -h "$ST_H" "[setbg] MCT=$MCT" ""
             ;;
         --outint)
             shift
@@ -106,14 +109,16 @@ ${margs_array[@]}
 }
 EOF
 
+echo "$cache" > "$CACHE" # write to cache
+[ "$COMBINE_TOGGLED" ] && exit 0
+
 if [ -n "${margs_array[*]}" ]; then
     printf "magick convert (args):\n%s\n" "${margs_array[*]}"
-    dunstify -u low -h "string:x-dunst-stack-tag:setbg" "[setbg] MCT=$MCT margs:" "\n${margs_array[*]}\n"
+    dunstify -u low -h "$ST_S" -h "$ST_H" "[setbg] MCT=$MCT margs:" "\n${margs_array[*]}\n"
     magick convert "$image" "${margs_array[@]}" "$DEST_PATH"
 elif [ -n "$image" ]; then
     cp "$image" "$DEST_PATH"
 fi
 wait
 
-echo "$cache" > "$CACHE" # write to cache
 xwallpaper --output "$output" "${xargs_array[@]}" "$DEST_PATH"
