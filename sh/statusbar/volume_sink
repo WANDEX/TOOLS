@@ -28,10 +28,18 @@ case "$SINK" in
 esac >/dev/null
 
 vol="$(pamixer --sink "$SINK" --get-volume)"
+if [ "$vol" -gt 99 ]; then
+    space=''
+    N=4
+else
+    space=' '
+    N=3
+fi
 
-if [ $(pamixer --sink "$SINK" --get-mute) = true ]; then
+if [ "$(pamixer --sink "$SINK" --get-mute)" = "true" ]; then
     icon="🔇"
     vol="$mute"
+    space=''
 elif [ "$vol" -gt "70" ]; then
     icon="🔊"
 elif [ "$vol" -lt "30" ]; then
@@ -40,5 +48,4 @@ else
     icon="🔉"
 fi
 
-echo "$icon $vol"
-
+printf "%s%""$N""s%s" "$icon" "$vol" "$space"
