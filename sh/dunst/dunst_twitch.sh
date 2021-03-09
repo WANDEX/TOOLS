@@ -8,7 +8,7 @@ icon="$4"
 urgency="$5"
 
 # extract channel name
-twitch_channel=$(echo "$summary" | sed "s/ is .*$//")
+twitch_channel=$(echo "$summary" | sed "s/ .*$//")
 url="https://www.twitch.tv/""$twitch_channel"
 summary="🔴 $twitch_channel LIVE:"
 body="\n$url"
