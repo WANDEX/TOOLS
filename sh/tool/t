@@ -1,0 +1,116 @@
+#!/bin/sh
+# simple single line stopwatch & timer
+# without arguments -> start stopwatch, stop it with any key
+
+# read into variable using 'Here Document' code block
+read -d '' USAGE <<- EOF
+Usage: $(basename $BASH_SOURCE) [OPTION...]
+OPTIONS
+    -h, --help      Display help
+    -n, --name      Name for timer used in notification
+    -s, --sleep     Seconds to sleep
+    -t, --timer     Set countdown timer to ... '1h2m3s'
+EXAMPLES
+$(basename $BASH_SOURCE) 5m
+$(basename $BASH_SOURCE) -t 1h
+$(basename $BASH_SOURCE) -t 1h33m7s
+EOF
+
+get_opt() {
+    # Parse and read OPTIONS command-line options
+    SHORT=hn:s:t:
+    LONG=help,name:,sleep:,timer:
+    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
+    # PLACE FOR OPTION DEFAULTS
+    s=1
+    DATEF="%H:%M:%S"
+    DST="string:x-dunst-stack-tag"
+    eval set -- "$OPTIONS"
+    while true; do
+        case "$1" in
+        -h|--help)
+            echo "$USAGE"
+            exit 0
+            ;;
+        -n|--name)
+            shift
+            tname="$1"
+            ;;
+        -s|--sleep)
+            shift
+            s="$1"
+            ;;
+        -t|--timer)
+            shift
+            timer="$1"
+            ;;
+        --)
+            shift
+            # set timer with arguments that are passed without options
+            [ -z "$timer" ] && timer="${*}" # but prefer passed with option
+            break
+            ;;
+        esac
+        shift
+    done
+}
+
+get_opt "$@"
+
+any_key(){
+    # return 1 if sleep timer ended or 0 if any key
+    read -r -n 1 -t "$s"
+}
+
+ext_num(){
+    # extract number by letter & convert to seconds
+    num=$(echo "$timer" | grep -Eio "[0-9]{1,}$1" | sed "s/$1[ ]*//g")
+    if [ -n "$num" ]; then
+        case "$1" in
+            [Hh]) echo "$num*60*60" | bc ;;
+            [Mm]) echo "$num*60" | bc ;;
+            [Ss]) echo "$num" ;;
+            *) echo 0 ;;
+        esac
+    else
+        echo 0
+    fi
+}
+
+sec_sum() {
+    # echo sum of H M S as seconds
+    H=$(ext_num "h")
+    M=$(ext_num "m")
+    S=$(ext_num "s")
+    echo "$H+$M+$S" | bc
+}
+
+countdown() {
+    sec=$(sec_sum)
+    edate=$(($(date +%s) + "$sec"));
+    while [ "$edate" -ge "$(date +%s)" ]; do
+        echo -ne " [$(date -u --date @$(("$edate" - $(date +%s))) +"$DATEF")]\r"
+        any_key && return # return from function without notification if timer explicitly stopped
+    done
+    while true; do
+        msg=$(dunstify -b -u critical -h "$DST:t" -h "$DST:hi" "[t] $tname ENDED" "[$timer] CLOSE ME!")
+        [ "$msg" = "2" ] && break # output will be '2' if notification is manually closed
+    done
+}
+
+stopwatch() {
+    sdate=$(date +%s);
+    while true; do
+        echo -ne " [$(date -u --date @$(($(date +%s) - "$sdate")) +"$DATEF")]\r"
+        any_key && break
+    done
+}
+
+tput civis # hide cursor
+if [ "$timer" ]; then
+    countdown
+else
+    stopwatch
+fi
+echo # new line -> leave last output line untouched
+tput cnorm # restore cursor
