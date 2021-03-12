@@ -1,0 +1,10 @@
+#!/bin/sh
+# set WM_NAME (window title) of active/focused window
+
+fwid=$(xdotool getactivewindow) # get id of the active/focused window
+
+input=$(echo "" | dmenu -p "enter new window title: ")
+[ -z "$input" ] && exit 1 # exit if ESC pressed or input is empty.
+
+# set new WM_NAME
+xdotool set_window --name "$input" "$fwid"
