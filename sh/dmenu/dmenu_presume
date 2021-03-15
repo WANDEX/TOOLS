@@ -1,0 +1,7 @@
+#!/bin/sh
+# copy to clipboard selected line from pomodoro-week-resume
+
+resume=$(pomodoro-week-resume | cut -f1 -d":" | sed -E "/^[[:digit:]]{2}/d; /.*week-.*$/d; /^[[:space:]]*$/d; s/[[:space:]]*$//g" | sort | uniq -uz)
+chosen=$(echo "$resume" | dmenu -p 'line to copy: ' -i -l 50)
+[ -z "$chosen" ] && exit # Exit if none chosen.
+clipargs "$chosen" # copy to clipboard & notify
