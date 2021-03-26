@@ -1,0 +1,84 @@
+#!/bin/sh
+# show packet loss statistic for last ... timeframe
+# supply $1 in any combination of *num[HhMmSs] format
+
+TIMEF="${1:-5m}" # $1 statistic for last ... timeframe
+interface=${NETINTERFACE:-enp3s0}
+
+DIR="${CSCRDIR:-$XDG_CACHE_HOME}/packet_loss"
+CACHE="$DIR/$TIMEF"
+
+[ ! -d "$DIR" ] && mkdir -p "$DIR"
+[ ! -w "$CACHE" ] && echo "0  0  0" > "$CACHE"
+
+ext_num(){
+    # extract number by letter & convert to seconds
+    num=$(echo "$TIMEF" | grep -Eio "[0-9]{1,}$1" | sed "s/$1[ ]*//g")
+    if [ -n "$num" ]; then
+        case "$1" in
+            [Hh]) echo "$num*60*60" | bc ;;
+            [Mm]) echo "$num*60" | bc ;;
+            [Ss]) echo "$num" ;;
+            *) echo 0 ;;
+        esac
+    else
+        echo 0
+    fi
+}
+
+sec_sum() {
+    # echo sum of H M S as seconds
+    H=$(ext_num "h")
+    M=$(ext_num "m")
+    S=$(ext_num "s")
+    echo "$H+$M+$S" | bc
+}
+
+TIMES=$(sec_sum) # convert TIMEF to seconds
+
+MTIME=$(date -r "$CACHE" +%s) # get file modification time in seconds
+NEXT_TIME=$(echo "$MTIME+$TIMES" | bc)
+
+# get live data
+json=$(ip -json -s link show "$interface")
+#json=$(cat ~/pack) # XXX temp
+dropped=$(echo "$json" | jq -r '.[].stats64.rx.dropped')
+errors=$(echo "$json" | jq -r '.[].stats64.rx.errors')
+over_errors=$(echo "$json" | jq -r '.[].stats64.rx.over_errors')
+
+if [ -r "$CACHE" ]; then
+    # get data from cache
+    c_dropped=$(awk '{print $1}' "$CACHE")
+    c_errors=$(awk '{print $2}' "$CACHE")
+    c_over_errors=$(awk '{print $3}' "$CACHE")
+else
+    c_dropped=0
+    c_errors=0
+    c_over_errors=0
+fi
+
+# subtract from total to calculate statistic only for given timeframe
+d=$(echo "$dropped-$c_dropped" | bc)
+e=$(echo "$errors-$c_errors" | bc)
+o=$(echo "$over_errors-$c_over_errors" | bc)
+
+# only update cache if timeframe is passed
+if [ "$(date +%s)" -gt "$NEXT_TIME" ]; then
+    # update cache file
+    #echo "cache updated"
+    printf "%s\t%s\t%s" "$dropped" "$errors" "$over_errors" > "$CACHE"
+fi
+
+OUT=""
+# append to output variable if it is > 0
+[ "$d" -gt 0 ] && OUT="$OUT""[$d]"
+[ "$e" -gt 0 ] && OUT="$OUT""E:$e"
+[ "$o" -gt 0 ] && OUT="$OUT""O:$o"
+
+if [ -z "$OUT" ]; then
+    OUT="" # if empty -> do nothing
+else
+    OUT="$TIMEF""$OUT" # add prefix to output
+    printf "%s" "$OUT"
+fi
+
