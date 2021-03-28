@@ -78,7 +78,7 @@ OUT=""
 if [ -z "$OUT" ]; then
     OUT="" # if empty -> do nothing
 else
-    OUT="$TIMEF""$OUT" # add prefix to output
-    printf "%s" "$OUT"
+    # add prefix to output
+    printf "%s%s%s" "⚠" "$TIMEF" "$OUT"
 fi
 
