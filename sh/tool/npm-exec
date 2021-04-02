@@ -6,7 +6,13 @@
 
 nbin="$(npm bin)"
 [ ! -d "$nbin" ] && exit 1
-path="$nbin/$1"
+if [ "$1" = "-p" ]; then
+    # simply output full path to local executable $2
+    echo "$nbin/$2"
+    exit 0
+else
+    path="$nbin/$1"
+fi
 if [ -e "$path" ]; then
     # simply execute cmd with all args except $1 (because it's executable name)
     "$path" "${@:2}"
