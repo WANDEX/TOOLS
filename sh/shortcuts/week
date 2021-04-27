@@ -1,0 +1,7 @@
+#!/bin/sh
+# shortcut - to edit last/previous or current week pomodoro file by default
+case "$1" in
+    last|prev|l|p) file="$(date -d 'last week' +'week-%V-%Y.txt')" ;;
+    *) file="$(date +'week-%V-%Y.txt')" ;;
+esac
+$EDITOR "$HOME/Documents/Pomodoro/$file"
