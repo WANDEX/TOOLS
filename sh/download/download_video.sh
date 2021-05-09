@@ -1,8 +1,15 @@
 #!/bin/sh
 # download via youtube-dl video playlist or single video
 
-# get before everything else (to prevent switching to another window)
-fwid=$(xdotool getactivewindow) # get id of the active/focused window
+# check if script started from terminal emulator
+if [ -t 0 ]; then
+    is_term=1
+    # get before everything else (to prevent switching to another window)
+    fwid=$(xdotool getactivewindow) # get id of the active/focused window
+else
+    is_term=0
+    fwid="empty"
+fi
 
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
@@ -146,23 +153,35 @@ ytdl() {
     else
         lindx="$END"
     fi
-    dunstify -h "string:x-dunst-stack-tag:dp_$fwid" "[DOWNLOAD][VIDEO][STARTED]($fwid){$lindx}:" "\n$body\n"
+    # show this notification only if script started from terminal,
+    # to be sure, that we could check console-title in dunst_download_started.sh script.
+    if [ $is_term -eq 1 ]; then
+        dunstify -h "string:x-dunst-stack-tag:dp_$fwid" \
+            "[DOWNLOAD][VIDEO][STARTED]($fwid){$lindx}:" "\n$body\n"
+    fi
     youtube-dl --console-title --ignore-errors --yes-playlist "${pindex[@]}" --playlist-end="$END" \
         --write-sub --sub-lang en,ru --sub-format "ass/srt/best" --embed-subs \
         --format "$FORMAT" --output "$OUT" "${restr[@]}" "$URL"
     exit_code=$?
     if [ $exit_code -eq 0 ]; then
-        dunstify -u normal -h "string:x-dunst-stack-tag:dp_$fwid" \
-            "[DOWNLOAD][VIDEO][COMPLETED]($fwid)" "\n$body\n"
+        if [ $is_term -eq 1 ]; then
+            dunstify -u normal -h "string:x-dunst-stack-tag:dp_$fwid" \
+                "[DOWNLOAD][VIDEO][COMPLETED]($fwid)" "\n$body\n"
+        else
+            dunstify -u normal -h "string:x-dunst-stack-tag:dp_$fwid" \
+                "[DOWNLOAD][VIDEO][FINISHED]" "\n$body\n"
+        fi
     else
         dunstify -u critical -h "string:x-dunst-stack-tag:dp_$fwid" \
-            "[DOWNLOAD][VIDEO][ERROR]:[$exit_code]" "\n$body\n"
-        # here we fake ->
-        # to exit out of infinite loop inside dunst_download_started.sh
-        xprop -id "$fwid" -set WM_ICON_NAME "DOWNLOAD_COMPLETED"
-        sleep 5 # sleep ->
-        xdotool set_window --name "$TERMINAL" "$fwid" # set name (because ytdl will leave '...100%...')
-        xprop -id "$fwid" -remove WM_ICON_NAME # remove property (as it's default in st)
+            "[DOWNLOAD][VIDEO][ERROR]:[$exit_code]" "\n$body\n$URL\n"
+        if [ $is_term -eq 1 ]; then
+            # here we fake ->
+            # to exit out of infinite loop inside dunst_download_started.sh
+            xprop -id "$fwid" -set WM_ICON_NAME "DOWNLOAD_COMPLETED"
+            sleep 5 # sleep ->
+            xdotool set_window --name "$TERMINAL" "$fwid" # set name (because ytdl will leave '...100%...')
+            xprop -id "$fwid" -remove WM_ICON_NAME # remove property (as it's default in st)
+        fi
         exit "$exit_code"
     fi
 }
