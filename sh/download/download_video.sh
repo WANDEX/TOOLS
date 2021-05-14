@@ -15,6 +15,7 @@ fi
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
+    -b, --begin         Download from playlist index (default:1)
     -e, --end           If url is playlist - how many items to download (default:1)
     -h, --help          Display help
     -i, --interactive   Explicit interactive playlist end mode
@@ -22,24 +23,44 @@ OPTIONS
     -q, --quality       Quality of video/stream
     -r, --restrict      Restrict filenames to only ASCII characters, and avoid "&" and spaces in filenames
     -u, --url           URL of video/stream
+    -y, --ytdl          Any other youtube-dl native options (specify only inside "")
+EXAMPLES:
+    $(basename $BASH_SOURCE) -u "\$URL" -y "--simulate --get-duration" -y "--playlist-items 1-3"
 EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=e:hip:rq:u:
-    LONG=end:,help,interactive,path:,restrict,quality:,url:
+    SHORT=b:e:hip:rq:u:y:
+    LONG=begin:,end:,help,interactive,path:,restrict,quality:,url:,ytdl:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     OUT="$HOME"'/Films/.yt/'
+    START=1    # youtube-dl --playlist-start > download from playlist index
     END=1      # youtube-dl --playlist-end > get first N items from playlist
     ENDOPT=0
     EXT='webm' # prefer certain extension over FALLBACK in youtube-dl
     QLT='1080' # video height cap, will be less if unavailable in youtube-dl
     URL="$(xclip -selection clipboard -out)"
     restr=()
+    YTDLOPTS=()
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
+        -b|--begin)
+            shift
+            case $1 in
+                -1) START=1 ;;
+                0*)
+                    printf "($1)\n^ unsupported number! exit.\n"
+                    exit 1
+                    ;;
+                ''|*[!0-9]*)
+                    printf "($1)\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    exit 1
+                    ;;
+                *) START=$1 ;;
+            esac
+            ;;
         -e|--end)
             shift
             case $1 in
@@ -72,6 +93,14 @@ get_opt() {
         -q|--quality)
             shift
             QLT="$1"
+            ;;
+        -y|--ytdl)
+            shift
+            # convert spaces in argument into individual args if any
+            # -> so here we split arg string "$1" to array and arguments
+            IFS=' ' read -ra yargs <<< "$1"
+            # + to join all previously specified -y options into one array as in EXAMPLES
+            YTDLOPTS+=( "${yargs[@]}" )
             ;;
         -u|--url)
             shift
@@ -129,9 +158,6 @@ ytdl() {
         *"8"*)
             QLT="1080"
         ;;
-        *)
-            QLT="$QLT"
-        ;;
     esac >/dev/null
     VIDEO='bestvideo[ext='"$EXT"'][height<=?'"$QLT"']'
     AUDIO='bestaudio[ext='"$EXT"']'
@@ -159,9 +185,10 @@ ytdl() {
         dunstify -h "string:x-dunst-stack-tag:dp_$fwid" \
             "[DOWNLOAD][VIDEO][STARTED]($fwid){$lindx}:" "\n$body\n"
     fi
-    youtube-dl --console-title --ignore-errors --yes-playlist "${pindex[@]}" --playlist-end="$END" \
+    youtube-dl --console-title --ignore-errors --yes-playlist \
+        "${pindex[@]}" --playlist-start="$START" --playlist-end="$END" \
         --write-sub --sub-lang en,ru --sub-format "ass/srt/best" --embed-subs \
-        --format "$FORMAT" --output "$OUT" "${restr[@]}" "$URL"
+        --format "$FORMAT" --output "$OUT" "${restr[@]}" "${YTDLOPTS[@]}" "$URL"
     exit_code=$?
     if [ $exit_code -eq 0 ]; then
         if [ $is_term -eq 1 ]; then
