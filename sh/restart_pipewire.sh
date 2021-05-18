@@ -17,5 +17,5 @@ setsid -f mpdas -d
 pkill mpdup
 setsid -f mpdup
 setsid -f pulseeffects --gapplication-service
-# use ^C to exit out of junk outputted by pulseeffects to terminal
+printf "\n%s\n" "Use ^C to exit out of junk outputted by pulseeffects to terminal."
 # WARNINGS etc. dunno how to suppress that...
