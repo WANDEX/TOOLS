@@ -1,6 +1,9 @@
 #!/bin/sh
 # download via youtube-dl video playlist or single video
 
+red=$'\e[1;31m'; grn=$'\e[1;32m'; yel=$'\e[1;33m'; blu=$'\e[1;34m'; mag=$'\e[1;35m'; cyn=$'\e[1;36m'; end=$'\e[0m'
+red_i=$'\e[1;41m'; grn_i=$'\e[1;42m'; yel_i=$'\e[1;43m'; blu_i=$'\e[1;44m'; mag_i=$'\e[1;45m'; cyn_i=$'\e[1;46m'; def_i=$'\e[1;7m'
+
 # check if script started from terminal emulator
 if [ -t 0 ]; then
     is_term=1
@@ -17,6 +20,7 @@ Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
     -b, --begin         Download from playlist index (default:1)
     -e, --end           If url is playlist - how many items to download (default:1)
+    -f, --file          Read url's from file, and download each specified on it's own line
     -h, --help          Display help
     -i, --interactive   Explicit interactive playlist end mode
     -p, --path          Destination path where to download
@@ -30,8 +34,8 @@ EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=b:e:hip:rq:u:y:
-    LONG=begin:,end:,help,interactive,path:,restrict,quality:,url:,ytdl:
+    SHORT=b:e:f:hip:rq:u:y:
+    LONG=begin:,end:,file:,help,interactive,path:,restrict,quality:,url:,ytdl:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     OUT="$HOME"'/Films/.yt/'
@@ -75,6 +79,18 @@ get_opt() {
                     ;;
                 *) END=$1 ;;
             esac
+            ;;
+        -f|--file)
+            shift
+            file="$1"
+            if [ ! -r "$file" ]; then
+                printf "%s\n%s\n" "$file" "^file not found or not readable. exit."
+                exit 1
+            fi
+            # remove everything after # character and empty lines with/without spaces
+            URLS=$(cat "$file" | sed "s/[[:space:]]*#.*$//g; /^[[:space:]]*$/d")
+            URLL=$(echo "$URLS" | wc -l)
+            URL=$(echo "$URLS" | head -n 1) # get first url for ytdl_check()
             ;;
         -h|--help)
             echo "$USAGE"
@@ -150,6 +166,57 @@ ytdl_check() {
     fi
 }
 
+statistic() {
+    exit_code="$1"
+    # initial values
+    [ -z "$ok" ] && ok=0
+    [ -z "$err" ] && err=0
+    [ -z "$sum" ] && sum=0
+    case "$exit_code" in
+        0)
+            ok=$(echo "$ok+1" | bc)
+            printf "${cyn_i}[%s/%s]${end}\n" "$ok" "$URLL"
+        ;;
+        *)
+            err=$(echo "$err+1" | bc)
+            printf "${red_i}[%s(%s)]${end}\n" "ERROR:" "$exit_code"
+        ;;
+    esac
+    sum=$(echo "$ok+$err" | bc)
+    if [ "$URLL" -eq "$ok" ]; then
+        printf "${cyn_i}[%s]${end} ${cyn}%s${end}\n" "$ok" "ALL OK, FINISHED."
+    elif [ "$URLL" -eq "$sum" ]; then
+        printf "${mag}%s ${red}[%s] ${mag}%s${end}\n" "FINISHED WITH" "$err" "ERRORS."
+    fi
+}
+
+ytdl_cmd() {
+    url="$1"
+    youtube-dl --console-title --ignore-errors --yes-playlist \
+        "${pindex[@]}" --playlist-start="$START" --playlist-end="$END" \
+        --write-sub --sub-lang en,ru --sub-format "ass/srt/best" --embed-subs \
+        --format "$FORMAT" --output "$OUT" "${restr[@]}" "${YTDLOPTS[@]}" "$url"
+    exit_code=$?
+    statistic "$exit_code"
+}
+
+loop_over_urls() {
+    # read line by line
+    while IFS= read -r url; do
+        printf "\n${cyn}> %s${end}\n" "$url"
+        ytdl_cmd "$url"
+    done <<< "$URLS"
+}
+
+ytdl_download() {
+    url="$1"
+    if [ -n "$URLS" ]; then
+        loop_over_urls
+    else
+        ytdl_cmd "$url"
+    fi
+}
+
 ytdl() {
     # youtube-dl
     case "$QLT" in
@@ -192,11 +259,7 @@ ytdl() {
         dunstify -h "string:x-dunst-stack-tag:dp_$fwid" \
             "[DOWNLOAD][VIDEO][STARTED]($fwid){$lindx}:" "\n$body\n"
     fi
-    youtube-dl --console-title --ignore-errors --yes-playlist \
-        "${pindex[@]}" --playlist-start="$START" --playlist-end="$END" \
-        --write-sub --sub-lang en,ru --sub-format "ass/srt/best" --embed-subs \
-        --format "$FORMAT" --output "$OUT" "${restr[@]}" "${YTDLOPTS[@]}" "$URL"
-    exit_code=$?
+    ytdl_download "$URL"
     if [ $exit_code -eq 0 ]; then
         if [ $is_term -eq 1 ]; then
             dunstify -u normal -h "string:x-dunst-stack-tag:dp_$fwid" \
