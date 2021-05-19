@@ -130,7 +130,14 @@ get_index() {
 ytdl_check() {
     # youtube-dl URL verification, verify only first item if many
     get_index
-    JSON="$(youtube-dl --dump-json --no-warnings "${pindex[@]}" --playlist-end=1 "$1")"
+    case "${YTDLOPTS[*]}" in
+        *"--no-playlist"*)
+            # fix: for case when we specify '-y --no-playlist'
+            # without it, we will get many NA in out path
+            np=( --no-playlist )
+        ;;
+    esac
+    JSON="$(youtube-dl --dump-json --no-warnings "${pindex[@]}" --playlist-end=1 "${np[@]}" "$1")"
     return_code=$?
     if [ "$return_code" -ne 0 ]; then
         summary="youtube-dl ERROR CODE[$return_code]:"
