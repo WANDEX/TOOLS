@@ -90,7 +90,6 @@ get_opt() {
             # remove everything after # character and empty lines with/without spaces
             URLS=$(cat "$file" | sed "s/[[:space:]]*#.*$//g; /^[[:space:]]*$/d")
             URLL=$(echo "$URLS" | wc -l)
-            URL=$(echo "$URLS" | head -n 1) # get first url for ytdl_check()
             ;;
         -h|--help)
             echo "$USAGE"
@@ -134,18 +133,22 @@ get_opt() {
 get_opt "$@"
 
 get_index() {
+    url="$1"
     # get int index value from url and make array option with it
-    case "$URL" in
+    case "$url" in
         *"&index="*)
-            ndx=$(echo "$URL" | grep -o "&index=[[:digit:]]*" | sed "s/&index=//")
+            ndx=$(echo "$url" | grep -o "&index=[[:digit:]]*" | sed "s/&index=//")
             pindex=( --playlist-items "$ndx" )
         ;;
     esac
+    echo "$ndx"
 }
 
 ytdl_check() {
     # youtube-dl URL verification, verify only first item if many
-    get_index
+    # get JSON data for url & OUTPATH as global variables
+    url="$1"
+    get_index "$url" >/dev/null 2>&1 # suppress output & errors
     case "${YTDLOPTS[*]}" in
         *"--no-playlist"*)
             # fix: for case when we specify '-y --no-playlist'
@@ -153,16 +156,16 @@ ytdl_check() {
             np=( --no-playlist )
         ;;
     esac
-    JSON="$(youtube-dl --dump-json --no-warnings "${pindex[@]}" --playlist-end=1 "${np[@]}" "$1")"
+    JSON="$(youtube-dl --dump-json --no-warnings "${pindex[@]}" --playlist-end=1 "${np[@]}" "$url")"
     return_code=$?
     if [ "$return_code" -ne 0 ]; then
-        summary="youtube-dl ERROR CODE[$return_code]:"
+        summary="youtube-dl ERROR[$return_code]:"
         msg="TERMINATED Invalid URL,\nor first element from the URL"
         notify-send -u critical "$summary" "$msg"
         exit $return_code
     else
         RAWOUT=$(echo "$JSON" | ytdl_out_path.sh)
-        OUT="$OUT""$RAWOUT"
+        OUTPATH="$OUT""$RAWOUT"
     fi
 }
 
@@ -183,9 +186,9 @@ statistic() {
         ;;
     esac
     sum=$(echo "$ok+$err" | bc)
-    if [ "$URLL" -eq "$ok" ]; then
+    if [ $URLL -eq $ok ]; then
         printf "${cyn_i}[%s]${end} ${cyn}%s${end}\n" "$ok" "ALL OK, FINISHED."
-    elif [ "$URLL" -eq "$sum" ]; then
+    elif [ $URLL -eq $sum ]; then
         printf "${mag}%s ${red}[%s] ${mag}%s${end}\n" "FINISHED WITH" "$err" "ERRORS."
     fi
 }
@@ -195,14 +198,32 @@ ytdl_cmd() {
     youtube-dl --console-title --ignore-errors --yes-playlist \
         "${pindex[@]}" --playlist-start="$START" --playlist-end="$END" \
         --write-sub --sub-lang en,ru --sub-format "ass/srt/best" --embed-subs \
-        --format "$FORMAT" --output "$OUT" "${restr[@]}" "${YTDLOPTS[@]}" "$url"
+        --format "$FORMAT" --output "$OUTPATH" "${restr[@]}" "${YTDLOPTS[@]}" "$url"
     exit_code=$?
-    statistic "$exit_code"
+    [ "$URLL" ] && statistic "$exit_code"
+}
+
+add_index() {
+    # remove old & add new index to filename, then output new path
+    _index="$1"
+    _path=$(dirname "$OUTPATH")
+    _base=$(basename "$OUTPATH" | sed "s/^[[:digit:]]\+\. //") # remove old index
+    _out="$_path/$_index$_base"
+    echo "$_out"
 }
 
 loop_over_urls() {
     # read line by line
     while IFS= read -r url; do
+        ytdl_check "$url"
+        case "$url" in
+            *"&index="*)
+                # if url contains explicit index, use it as filename prefix
+                index=$(get_index "$url") # get_index out of url parameters
+                findex=$(printf "%.3d%s" "$index" ". ") # make index of format
+                OUTPATH=$(add_index "$findex")
+            ;;
+        esac
         printf "\n${cyn}> %s${end}\n" "$url"
         ytdl_cmd "$url"
     done <<< "$URLS"
@@ -213,12 +234,14 @@ ytdl_download() {
     if [ -n "$URLS" ]; then
         loop_over_urls
     else
+        ytdl_check "$url"
         ytdl_cmd "$url"
     fi
 }
 
 ytdl() {
     # youtube-dl
+    url="$1"
     case "$QLT" in
         *"1"*)
             QLT="1080"
@@ -240,8 +263,8 @@ ytdl() {
     FALLBACKAUDIO='bestaudio/best'
     FORMAT="$GLUED"'/'"$FALLBACKVIDEO"'+'"$FALLBACKAUDIO"
     title="$(echo "$JSON" | jq -r ".title")"
-    case "$URL" in
-        *"playlist?list="*) body="$URL" ;;
+    case "$url" in
+        *"playlist?list="*) body="$url" ;;
         *) body="$title" ;;
     esac
     if [ "$END" = "-1" ]; then
@@ -259,7 +282,7 @@ ytdl() {
         dunstify -h "string:x-dunst-stack-tag:dp_$fwid" \
             "[DOWNLOAD][VIDEO][STARTED]($fwid){$lindx}:" "\n$body\n"
     fi
-    ytdl_download "$URL"
+    ytdl_download "$url"
     if [ $exit_code -eq 0 ]; then
         if [ $is_term -eq 1 ]; then
             dunstify -u normal -h "string:x-dunst-stack-tag:dp_$fwid" \
@@ -270,7 +293,7 @@ ytdl() {
         fi
     else
         dunstify -u critical -h "string:x-dunst-stack-tag:dp_$fwid" \
-            "[DOWNLOAD][VIDEO][ERROR]:[$exit_code]" "\n$body\n$URL\n"
+            "[DOWNLOAD][VIDEO][ERROR]:[$exit_code]" "\n$body\n$url\n"
         if [ $is_term -eq 1 ]; then
             # here we fake ->
             # to exit out of infinite loop inside dunst_download_started.sh
@@ -279,12 +302,11 @@ ytdl() {
             xdotool set_window --name "$TERMINAL" "$fwid" # set name (because ytdl will leave '...100%...')
             xprop -id "$fwid" -remove WM_ICON_NAME # remove property (as it's default in st)
         fi
-        exit "$exit_code"
+        exit $exit_code
     fi
 }
 
 main() {
-    ytdl_check "$URL"
     if [ "$ENDOPT" -eq 1 ]; then
         Q="Download all videos [y/n]? "
         while true; do
@@ -297,7 +319,7 @@ main() {
             esac
         done
     fi
-    ytdl "$@"
+    ytdl "$URL"
 }
 
 main "$@"
