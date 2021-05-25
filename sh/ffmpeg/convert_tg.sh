@@ -16,6 +16,22 @@ cd "$DIR_SRC"
 find . -type f \( ! -iname ".*" \) > "$HRRCH_NEW"
 UNCOMM=$(comm -23 "$HRRCH_NEW" "$HRRCH_OLD") # only new files
 
+convert() {
+    # see also: 'man ffmpeg' and 'x264 --fullhelp' -crf 23 or -crf 28 for more compression
+    so=( -nostdin -nostats -hide_banner -loglevel warning )
+    vf=( -vf scale=-2:360 -pix_fmt yuv420p -max_muxing_queue_size 4096 )
+    cf=( -color_primaries 1 -color_trc 1 -colorspace 1 )
+    xf=( -c:v libx264 -profile:v baseline -preset medium -crf 28 )
+    af=( -ac 2 -c:a aac -profile:a aac_low -ar 44100 )
+    ffmpeg "${so[@]}" -i "$file" "${vf[@]}" "${cf[@]}" "${xf[@]}" "${af[@]}" "$dest"
+    exit_code=$?
+    if [ $exit_code -eq 0 ]; then
+        notify-send -u normal "[convert_tg] [ENCODEME] Converted" "$name\n($dest)"
+    else
+        notify-send -u critical "[convert_tg] ERROR:$exit_code NOT Converted" "\n$name"
+    fi
+}
+
 while IFS= read -r file; do
     if [ -e "$file" ]; then
         name="$(basename ${file%.*})" # remove .ext part from file name
@@ -23,15 +39,7 @@ while IFS= read -r file; do
         parents="$DIR_TG"'/'"$rdir"
         mkdir -p "$parents"
         dest="$parents"'/'"${name}.mp4"
-        # see also: 'man ffmpeg' and 'x264 --fullhelp' -crf 23 or -crf 28 for more compression
-        so=( -nostdin -nostats -hide_banner -loglevel warning )
-        vf=( -vf scale=-2:360 -pix_fmt yuv420p -max_muxing_queue_size 4096 )
-        cf=( -color_primaries 1 -color_trc 1 -colorspace 1 )
-        xf=( -c:v libx264 -profile:v baseline -preset medium -crf 28 )
-        af=( -ac 2 -c:a aac -profile:a aac_low -ar 44100 )
-        ffmpeg "${so[@]}" -i "$file" "${vf[@]}" "${cf[@]}" "${xf[@]}" "${af[@]}" "$dest" && \
-            notify-send -u normal -t 5000 "DONE: Converted for TG." "${name//_/ }" || \
-            notify-send -u critical -t 5000 "ERROR: NOT Converted for TG!" "${name//_/ }"
+        convert
     fi
 done <<< "$UNCOMM"
 
