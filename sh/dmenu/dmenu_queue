@@ -1,0 +1,21 @@
+#!/bin/sh
+# select songs from .loved_tracks file with dmenu & add with mpc to queue
+lt="$HOME/Music/.playlists/.loved_tracks"
+raw_data=$(cat "$lt")
+
+input=$(echo "$raw_data" | dmenu -p "[Shift-Enter] add all matched songs to queue: " -i -l 50)
+[ -z "$input" ] && exit 1 # exit if ESC pressed or input is empty.
+
+match=$(echo "$raw_data" | grep -i "$input")
+
+allfound=""
+# read line by line
+while IFS= read -r line; do
+    artist=$(echo "$line" | sed "s/ - .*$//")
+    title=$(echo "$line" | sed "s/^.* - //")
+    found=$(mpc find Artist "$artist" Title "$title")
+    allfound=$(printf "%s\n%s" "$allfound" "$found")
+done <<< "$match"
+
+# sort & remove empty lines with/without spaces -> add to the end of the queue
+echo "$allfound" | sort | sed "/^[[:space:]]*$/d" | mpc add
