@@ -1,0 +1,24 @@
+#!/bin/sh
+# simple status text
+# with status2d background/foreground colors are flipped between updates
+
+ST="Straighten your back, keep your posture!"
+text="${1:-$ST}"
+N="${2:-0}"
+FILE="$CSCRDIR/stext"
+
+main() {
+    sec=$(date +%S)
+    isdivisible=$(echo "$sec % 2" | bc) # 0 -> divisible by 2
+    [ $isdivisible -eq 0 ] && inv="^w^"
+    if [ -r "$FILE" ] && [ "$text" = "$ST" ]; then
+        text=$(head -qzn1 "$FILE")
+    fi
+    # repeat space character N times
+    [ "$N" -ne 0 ] && spaces=$(printf ' %.0s' $(seq 1 "$N"))
+    printf "%s %s %s%s" "^v^$inv^w^" "$text" "^t^" "$spaces"
+}
+
+sleep 1
+main
+
