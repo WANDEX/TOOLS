@@ -3,7 +3,7 @@
 lt="$HOME/Music/.playlists/.loved_tracks"
 raw_data=$(cat "$lt")
 
-input=$(echo "$raw_data" | dmenu -p "[Shift-Enter] add all matched songs to queue: " -i -l 50)
+input=$(echo "$raw_data" | dmenu -p "[Shift-Enter] add all matched songs to queue: " -i -g 3 -l 50)
 [ -z "$input" ] && exit 1 # exit if ESC pressed or input is empty.
 
 match=$(echo "$raw_data" | grep -i "$input")
