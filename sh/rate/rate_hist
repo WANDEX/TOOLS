@@ -1,0 +1,236 @@
+#!/bin/sh
+# create json file with name 'datebuy_coinname', in interactive mode add all buy/sell data to file
+
+XDGCHCS="${XDG_CACHE_HOME:-"$HOME/.cache"}/cscripts"
+CACHEDIR="${CSCRDIR:-$XDGCHCS}/rate_hist"
+[ ! -d "$CACHEDIR" ] && mkdir -p "$CACHEDIR"
+
+if [ -t 0 ]; then
+    fwid=$(xdotool getactivewindow) # get id of the active/focused terminal emulator window
+    # FIXME right now is unused, as currently my st with alpha patch can't embed dmenu into it's window
+    [ -n "$fwid" ] && fwidarr=( -w "$fwid" )
+    # TODO create my own build of st with fresh alpha patch and test 'dmenu "${fwidarr[@]}"'
+fi
+
+# read into variable using 'Here Document' code block
+read -d '' USAGE <<- EOF
+Usage: $(basename $BASH_SOURCE) [OPTION...]
+OPTIONS
+    -b, --buy,      buy       Buy mode
+    -D, --dmenu               Toggle use of dmenu interactive input mode
+    -i, --interactive         Toggle interactive mode on/off
+    -h, --help                Display help
+    -s, --sell,     sell      Sell mode
+INPUT MODE OPTIONS
+    -c, --coin,     coin      Coin name
+    -d, --date,     date      Date of operation
+    -f, --fee,      fee       Fee of coin buy/sell
+    -F, --filled,   filled    Filled amount of coin
+    -p, --price,    price     Price of coin
+    -q, --quantity, quantity  Total quantity of coins
+EOF
+
+get_opt() {
+    # Parse and read OPTIONS command-line options
+    SHORT=c:bd:Df:F:ihp:q:s
+    LONG=coin:,buy,date:,dmenu,fee:,filled:,interactive,help,price:,quantity:,sell
+    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
+    # PLACE FOR OPTION DEFAULTS
+    interactive=1
+    dmenu=1
+    eval set -- "$OPTIONS"
+    while true; do
+        case "$1" in
+        -b|--buy)
+            operation=buy
+            ;;
+        -c|--coin)
+            shift
+            coin="$1"
+            ;;
+        -d|--date)
+            shift
+            date="$1"
+            ;;
+        -D|--dmenu)
+            [ "$dmenu" -eq 1 ] && dmenu=0 || dmenu=1 # toggle behavior of value
+            ;;
+        -f|--fee)
+            shift
+            fee="$1"
+            ;;
+        -F|--filled)
+            shift
+            filled="$1"
+            ;;
+        -i|--interactive)
+            [ "$interactive" -eq 1 ] && interactive=0 || interactive=1 # toggle behavior of value
+            ;;
+        -h|--help)
+            echo "$USAGE"
+            exit 0
+            ;;
+        -p|--price)
+            shift
+            price="$1"
+            ;;
+        -q|--quantity)
+            shift
+            quantity="$1"
+            ;;
+        -s|--sell)
+            operation=sell
+            ;;
+        --)
+            shift
+            break
+            ;;
+        esac
+        shift
+    done
+}
+
+get_opt "$@"
+
+questions() {
+    qcoin="Coin name: "
+    qprice="Price of single asset: "
+    qfilled="Filled: "
+    qfee="Fee: "
+    qquantity="Total/Quantity: "
+    qdate="Date of operation: "
+}
+
+questions
+
+ask_buy_or_sell() {
+    q_operation="Buy or Sell mode to use? (B/s): "
+    if [ -z "$operation" ]; then
+        if [ "$dmenu" -eq 1 ]; then
+            operation=$(printf "%s\n%s\n" "buy" "sell" | dmenu -i -n -p "$q_operation")
+            case "$operation" in
+                [Bb]uy)  operation=buy  ;;
+                [Ss]ell) operation=sell ;;
+            esac
+        else
+            while true; do
+                read -r -n 1 -p "$q_operation" operation
+                case "$operation" in
+                    [Bb]) operation=buy;  break ;;
+                    [Ss]) operation=sell; break ;;
+                    *) printf "\n%s\n" "I don't get it." ;;
+                esac
+            done
+        fi
+    fi
+}
+
+term_ask_input_data() {
+    [ -z "$coin"     ] && read -r -p "$qcoin"     coin
+    [ -z "$price"    ] && read -r -p "$qprice"    price
+    [ -z "$filled"   ] && read -r -p "$qfilled"   filled
+    [ -z "$fee"      ] && read -r -p "$qfee"      fee
+    [ -z "$quantity" ] && read -r -p "$qquantity" quantity
+    [ -z "$date"     ] && read -r -p "$qdate"     date
+}
+
+data_recheck() {
+    printf "%s\n" "$1" # print empty line or line with arg
+    printf "%24s %s\n" "$qcoin"     "$coin"
+    printf "%24s %s\n" "$qprice"    "$price"
+    printf "%24s %s\n" "$qfilled"   "$filled"
+    printf "%24s %s\n" "$qfee"      "$fee"
+    printf "%24s %s\n" "$qquantity" "$quantity"
+    printf "%24s %s\n" "$qdate"     "$date"
+}
+
+check_variables() {
+    # check if all required values are provided with options
+    empty=""
+    [ -z "$operation" ] && empty="$empty o" && printf "%s : %s\n" "[o] empty" "operation"
+    [ -z "$coin"      ] && empty="$empty c" && printf "%s : %s\n" "[c] empty" "coin"
+    [ -z "$price"     ] && empty="$empty,p" && printf "%s : %s\n" "[p] empty" "price"
+    [ -z "$filled"    ] && empty="$empty,F" && printf "%s : %s\n" "[F] empty" "filled"
+    [ -z "$fee"       ] && empty="$empty,f" && printf "%s : %s\n" "[f] empty" "fee"
+    [ -z "$quantity"  ] && empty="$empty,q" && printf "%s : %s\n" "[q] empty" "quantity"
+    [ -z "$date"      ] && empty="$empty,d" && printf "%s : %s\n" "[d] empty" "date"
+    if [ -n "$empty" ] && [ $interactive -eq 0 ]; then
+        # in non interactive mode, print which option is empty and just exit
+        printf "%s %s\n" "exit because of:" "$empty"
+        exit 1
+    fi
+}
+
+notify() {
+    notify-send -u low "$1" "$2"
+}
+
+update_variable() {
+    # guess variable by substring
+    # replace old value with new
+    line="$1"
+    value="$2"
+    case "$line" in
+        *"$qcoin"*) coin="$value";;
+        *"$qprice"*) price="$value";;
+        *"$qfilled"*) filled="$value";;
+        *"$qfee"*) fee="$value";;
+        *"$qquantity"*) quantity="$value";;
+        *"$qdate"*) date="$value";;
+    esac
+}
+
+dmenu_ask_input_data() {
+    # OK field becomes available only if all required fields are not empty
+    # if OK line selected -> all good, else -> edit variable selected by line
+    ok_msg="OK | save as json and exit."
+    while true; do
+        empty_fields=$(check_variables)
+        [ -z "$empty_fields" ] && ok="$ok_msg"
+        selection=$(data_recheck "$ok" | dmenu -l 10 -i -p "OK | edit variable selected by line:")
+        case "$selection" in
+            [Ee]xit|[Cc]lose) exit 0 ;;
+            "$ok_msg") break ;;
+            ""|" ") edit=0; ok="" continue ;; # ESC is pressed -> simply go on next loop iteration
+            *) edit=1 ;;
+        esac
+        if [ "$edit" -eq 1 ]; then
+            # set new variable value
+            new_value=$(echo "" | dmenu -p "set new value of ($selection):")
+            update_variable "$selection" "$new_value"
+            # data_recheck will print with new value on next loop iteration
+        fi
+    done
+}
+
+save_as_json() {
+    json=$(jq -n \
+        --arg o "$operation" --arg c "$coin" --arg p "$price" --arg F "$filled" \
+        --arg f "$fee" --arg q "$quantity" --arg d "$date" \
+        '{operation: $o, coin: $c, price: $p, filled: $F, fee: $f, quantity: $q, date: $d}')
+    echo "$json"
+}
+
+if [ $interactive -eq 1 ]; then
+    if [ "$dmenu" -eq 1 ]; then
+        # dmenu input mode
+        ask_buy_or_sell
+        dmenu_ask_input_data
+        save_as_json
+    else
+        # terminal emulator input mode
+        ask_buy_or_sell
+        term_ask_input_data
+        data_recheck
+        read -r -n 1 -p "All input is right? (Y/n): " confirm
+        case "$confirm" in
+            [YyEeSs]) printf "\n\n"  ;; # insert new lines after confirm prompt
+            [NnOo])   echo && exit 1 ;;
+        esac
+        save_as_json
+    fi
+else
+    echo "Non interactive mode"
+    check_variables
+    save_as_json
+fi
