@@ -16,11 +16,11 @@ fi
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
-    -b, --buy           Buy mode
+    -b, --buy           Buy operation
     -D, --dmenu         Toggle use of dmenu interactive input mode
     -i, --interactive   Toggle interactive mode on/off
     -h, --help          Display help
-    -s, --sell          Sell mode
+    -s, --sell          Sell operation
 INPUT MODE OPTIONS
     -c, --coin          Coin name
     -C, --currency      Currency name of price:
@@ -110,7 +110,7 @@ questions() {
 questions
 
 ask_buy_or_sell() {
-    q_operation="Buy or Sell mode to use? (B/s): "
+    q_operation="Buy or Sell operation to use? (B/s): "
     if [ -z "$operation" ]; then
         if [ "$dmenu" -eq 1 ]; then
             operation=$(printf "%s\n%s\n" "buy" "sell" | dmenu -i -n -p "$q_operation")
