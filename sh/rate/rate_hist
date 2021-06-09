@@ -16,24 +16,25 @@ fi
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
-    -b, --buy,      buy       Buy mode
-    -D, --dmenu               Toggle use of dmenu interactive input mode
-    -i, --interactive         Toggle interactive mode on/off
-    -h, --help                Display help
-    -s, --sell,     sell      Sell mode
+    -b, --buy           Buy mode
+    -D, --dmenu         Toggle use of dmenu interactive input mode
+    -i, --interactive   Toggle interactive mode on/off
+    -h, --help          Display help
+    -s, --sell          Sell mode
 INPUT MODE OPTIONS
-    -c, --coin,     coin      Coin name
-    -d, --date,     date      Date of operation
-    -f, --fee,      fee       Fee of coin buy/sell
-    -F, --filled,   filled    Filled amount of coin
-    -p, --price,    price     Price of coin
-    -q, --quantity, quantity  Total quantity of coins
+    -c, --coin          Coin name
+    -C, --currency      Currency name of price:
+    -d, --date          Date of operation
+    -f, --fee           Fee of coin buy/sell
+    -F, --filled        Filled amount of coin
+    -p, --price         Price of coin
+    -t, --total         Total in currency
 EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=c:bd:Df:F:ihp:q:s
-    LONG=coin:,buy,date:,dmenu,fee:,filled:,interactive,help,price:,quantity:,sell
+    SHORT=bc:C:d:Df:F:ihp:st:
+    LONG=buy,coin:,currency:,date:,dmenu,fee:,filled:,interactive,help,price:,sell,total:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     interactive=1
@@ -47,6 +48,10 @@ get_opt() {
         -c|--coin)
             shift
             coin="$1"
+            ;;
+        -C|--currency)
+            shift
+            currency="$1"
             ;;
         -d|--date)
             shift
@@ -74,12 +79,12 @@ get_opt() {
             shift
             price="$1"
             ;;
-        -q|--quantity)
-            shift
-            quantity="$1"
-            ;;
         -s|--sell)
             operation=sell
+            ;;
+        -t|--total)
+            shift
+            total="$1"
             ;;
         --)
             shift
@@ -93,11 +98,12 @@ get_opt() {
 get_opt "$@"
 
 questions() {
-    qcoin="Coin name: "
+    qcoin="Coin name of buy/sell: "
     qprice="Price of single asset: "
+    qcurrency="Currency name of price: "
     qfilled="Filled: "
     qfee="Fee: "
-    qquantity="Total/Quantity: "
+    qtotal="Total in currency: "
     qdate="Date of operation: "
 }
 
@@ -128,9 +134,10 @@ ask_buy_or_sell() {
 term_ask_input_data() {
     [ -z "$coin"     ] && read -r -p "$qcoin"     coin
     [ -z "$price"    ] && read -r -p "$qprice"    price
+    [ -z "$currency" ] && read -r -p "$qcurrency" price
     [ -z "$filled"   ] && read -r -p "$qfilled"   filled
     [ -z "$fee"      ] && read -r -p "$qfee"      fee
-    [ -z "$quantity" ] && read -r -p "$qquantity" quantity
+    [ -z "$total"    ] && read -r -p "$qtotal"    total
     [ -z "$date"     ] && read -r -p "$qdate"     date
 }
 
@@ -138,9 +145,10 @@ data_recheck() {
     printf "%s\n" "$1" # print empty line or line with arg
     printf "%24s %s\n" "$qcoin"     "$coin"
     printf "%24s %s\n" "$qprice"    "$price"
+    printf "%24s %s\n" "$qcurrency" "$currency"
     printf "%24s %s\n" "$qfilled"   "$filled"
     printf "%24s %s\n" "$qfee"      "$fee"
-    printf "%24s %s\n" "$qquantity" "$quantity"
+    printf "%24s %s\n" "$qtotal"    "$total"
     printf "%24s %s\n" "$qdate"     "$date"
 }
 
@@ -150,9 +158,10 @@ check_variables() {
     [ -z "$operation" ] && empty="$empty o" && printf "%s : %s\n" "[o] empty" "operation"
     [ -z "$coin"      ] && empty="$empty c" && printf "%s : %s\n" "[c] empty" "coin"
     [ -z "$price"     ] && empty="$empty,p" && printf "%s : %s\n" "[p] empty" "price"
+    [ -z "$currency"  ] && empty="$empty,C" && printf "%s : %s\n" "[C] empty" "currency"
     [ -z "$filled"    ] && empty="$empty,F" && printf "%s : %s\n" "[F] empty" "filled"
     [ -z "$fee"       ] && empty="$empty,f" && printf "%s : %s\n" "[f] empty" "fee"
-    [ -z "$quantity"  ] && empty="$empty,q" && printf "%s : %s\n" "[q] empty" "quantity"
+    [ -z "$total"     ] && empty="$empty,t" && printf "%s : %s\n" "[t] empty" "total"
     [ -z "$date"      ] && empty="$empty,d" && printf "%s : %s\n" "[d] empty" "date"
     if [ -n "$empty" ] && [ $interactive -eq 0 ]; then
         # in non interactive mode, print which option is empty and just exit
@@ -173,9 +182,10 @@ update_variable() {
     case "$line" in
         *"$qcoin"*) coin="$value";;
         *"$qprice"*) price="$value";;
+        *"$qcurrency"*) currency="$value";;
         *"$qfilled"*) filled="$value";;
         *"$qfee"*) fee="$value";;
-        *"$qquantity"*) quantity="$value";;
+        *"$qtotal"*) total="$value";;
         *"$qdate"*) date="$value";;
     esac
 }
@@ -205,9 +215,9 @@ dmenu_ask_input_data() {
 
 save_as_json() {
     json=$(jq -n \
-        --arg o "$operation" --arg c "$coin" --arg p "$price" --arg F "$filled" \
-        --arg f "$fee" --arg q "$quantity" --arg d "$date" \
-        '{operation: $o, coin: $c, price: $p, filled: $F, fee: $f, quantity: $q, date: $d}')
+        --arg o "$operation" --arg c "$coin" --arg p "$price" --arg C "$currency" \
+        --arg F "$filled" --arg f "$fee" --arg t "$total" --arg d "$date" \
+        '{operation: $o, coin: $c, price: $p, currency: $C, filled: $F, fee: $f, total: $t, date: $d}')
     echo "$json"
 }
 
