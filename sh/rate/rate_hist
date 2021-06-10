@@ -170,10 +170,6 @@ check_variables() {
     fi
 }
 
-notify() {
-    notify-send -u low "$1" "$2"
-}
-
 update_variable() {
     # guess variable by substring
     # replace old value with new
@@ -213,12 +209,33 @@ dmenu_ask_input_data() {
     done
 }
 
+read -rd '' RAWJSON <<- EOF
+{
+    "operation": "$operation",
+    "coin"     : "$coin",
+    "price"    : "$price",
+    "currency" : "$currency",
+    "filled"   : "$filled",
+    "fee"      : "$fee",
+    "total"    : "$total",
+    "date"     : "$date"
+}
+EOF
+
 save_as_json() {
-    json=$(jq -n \
-        --arg o "$operation" --arg c "$coin" --arg p "$price" --arg C "$currency" \
-        --arg F "$filled" --arg f "$fee" --arg t "$total" --arg d "$date" \
-        '{operation: $o, coin: $c, price: $p, currency: $C, filled: $F, fee: $f, total: $t, date: $d}')
-    echo "$json"
+    # convert RAWJSON 'Here Document' code block to json,
+    # generate filename of format, and save as json file.
+    # example: 2021-03-03_10:50:00[sell:BNB|USDT].json
+    strdate=$(echo "$date" | sed "s/[ ]\+/_/g") # replace spaces in date
+    filename="$strdate"'['"$operation:$coin|$currency"'].json'
+    filepath="$CACHEDIR/$filename"
+    json=$(echo "$RAWJSON" | jq .)
+    echo "$json" > "$filepath"
+    if [ -f "$filepath" ]; then
+        notify-send -u normal "[rate_hist] saved in:" "\n$filename\n"
+    else
+        notify-send -u critical "[rate_hist] ERROR file not saved:" "\n$filename\n"
+    fi
 }
 
 if [ $interactive -eq 1 ]; then
