@@ -131,16 +131,6 @@ ask_buy_or_sell() {
     fi
 }
 
-term_ask_input_data() {
-    [ -z "$coin"     ] && read -r -p "$qcoin"     coin
-    [ -z "$price"    ] && read -r -p "$qprice"    price
-    [ -z "$currency" ] && read -r -p "$qcurrency" price
-    [ -z "$filled"   ] && read -r -p "$qfilled"   filled
-    [ -z "$fee"      ] && read -r -p "$qfee"      fee
-    [ -z "$total"    ] && read -r -p "$qtotal"    total
-    [ -z "$date"     ] && read -r -p "$qdate"     date
-}
-
 data_recheck() {
     printf "%s\n" "$1" # print empty line or line with arg
     printf "%24s %s\n" "$qcoin"     "$coin"
@@ -209,6 +199,17 @@ dmenu_ask_input_data() {
     done
 }
 
+term_ask_input_data() {
+    [ -z "$coin"     ] && read -r -p "$qcoin"     coin
+    [ -z "$price"    ] && read -r -p "$qprice"    price
+    [ -z "$currency" ] && read -r -p "$qcurrency" currency
+    [ -z "$filled"   ] && read -r -p "$qfilled"   filled
+    [ -z "$fee"      ] && read -r -p "$qfee"      fee
+    [ -z "$total"    ] && read -r -p "$qtotal"    total
+    [ -z "$date"     ] && read -r -p "$qdate"     date
+}
+
+update_json_variables() {
 read -rd '' RAWJSON <<- EOF
 {
     "operation": "$operation",
@@ -221,6 +222,7 @@ read -rd '' RAWJSON <<- EOF
     "date"     : "$date"
 }
 EOF
+}
 
 save_as_json() {
     # convert RAWJSON 'Here Document' code block to json,
@@ -231,8 +233,9 @@ save_as_json() {
     filepath="$CACHEDIR/$filename"
     json=$(echo "$RAWJSON" | jq .)
     echo "$json" > "$filepath"
+    fcontent=$(cat "$filepath")
     if [ -f "$filepath" ]; then
-        notify-send -u normal "[rate_hist] saved in:" "\n$filename\n"
+        notify-send -u normal "[rate_hist] saved in:" "\n$filename\n$fcontent\n"
     else
         notify-send -u critical "[rate_hist] ERROR file not saved:" "\n$filename\n"
     fi
@@ -243,11 +246,13 @@ if [ $interactive -eq 1 ]; then
         # dmenu input mode
         ask_buy_or_sell
         dmenu_ask_input_data
+        update_json_variables
         save_as_json
     else
         # terminal emulator input mode
         ask_buy_or_sell
         term_ask_input_data
+        update_json_variables
         data_recheck
         read -r -n 1 -p "All input is right? (Y/n): " confirm
         case "$confirm" in
