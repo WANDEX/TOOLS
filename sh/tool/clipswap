@@ -1,26 +1,36 @@
 #!/bin/sh
-# swap clipboard & primary content
+# swap/show/paste/delete: clipboard, primary, secondary content
+
+# initial values, do not edit them!
+c=0; d=0; p=0; q=0; s=0;
 
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
+    -c, --content   Show content of primary, clipboard, secondary selections
+    -d, --delete    Delete content of all selections
     -h, --help      Display help
     -p, --paste     Paste primary selection
     -q, --quiet     Toggle quiet mode without notification
+    -s, --swap      Swap clipboard & primary content
 EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=hpq
-    LONG=help,paste,quiet
+    SHORT=cdhpqs
+    LONG=content,delete,help,paste,quiet,swap
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
-    p=0
-    q=0
     eval set -- "$OPTIONS"
     while true; do
         case "$1" in
+        -c|--content)
+            c=1
+            ;;
+        -d|--delete)
+            d=1
+            ;;
         -h|--help)
             echo "$USAGE"
             exit 0
@@ -30,6 +40,9 @@ get_opt() {
             ;;
         -q|--quiet)
             [ "$q" -eq 1 ] && q=0 || q=1 # toggle behavior of value
+            ;;
+        -s|--swap)
+            s=1
             ;;
         --)
             shift
@@ -42,6 +55,13 @@ get_opt() {
 
 get_opt "$@"
 
+# if no options is given -> show usage and exit
+sum_of_options=$(echo "$c+$d+$p+$s" | bc)
+if [ "$sum_of_options" -eq 0 ]; then
+    echo "$USAGE"
+    exit 0
+fi
+
 swapcmd() { xsel -x && xsel -bo | xsel -pi && xsel -so | xsel -bi; }
 
 if [ $p -eq 1 ]; then
@@ -52,11 +72,24 @@ if [ $p -eq 1 ]; then
         xdotool click --clearmodifiers 2 # paste with MMB
     else
         swapcmd
-        # this xdotool does nothing!
+        # FIXME why this xdotool command sometimes does nothing!?
         xdotool key --clearmodifiers ctrl+v # paste with keys
-        #swapcmd # swap back
+        swapcmd # swap back
     fi
-else
+fi
+
+if [ $s -eq 1 ]; then
     swapcmd
-    [ $q -eq 0 ] && notify-send -u low "📋swap:" "\nP:$(xsel -po)\nC:$(xsel -bo)"
+    [ $q -eq 0 ] && [ $c -eq 0 ] && notify-send -u low "📋 swap:" "\nP:$(xsel -po)\nC:$(xsel -bo)"
+fi
+
+if [ $d -eq 1 ]; then
+    # xsel -d option not always work, dunno why, so we use -c
+    xsel -bc
+    xsel -pc
+    xsel -sc
+fi
+
+if [ $c -eq 1 ]; then
+    [ $q -eq 0 ] && notify-send -u low "📋 content:" "\nP:$(xsel -po)\nC:$(xsel -bo)\nS:$(xsel -so)"
 fi
