@@ -1,0 +1,27 @@
+// definition of default predefined colors for s2d and using with status2d
+// lines with // are ignored and used as comment strings
+// empty lines also ignored
+
+c00 BLACK   #1A1A1A
+c08 black   #727072
+
+c01 RED     #FF6188
+c09 red     #C4265E
+
+c02 GREEN   #A9DC76
+c10 green   #A6E22E
+
+c03 YELLOW  #FFD866
+c11 yellow  #E2E22E
+
+c04 BLUE    #FC9867
+c12 blue    #F4BF75
+
+c05 MAGENTA #AB9DF2
+c13 magenta #AE81FF
+
+c06 CYAN    #78DCE8
+c14 cyan    #56ADBC
+
+c07 WHITE   #A89984
+c15 white   #EBDBB2

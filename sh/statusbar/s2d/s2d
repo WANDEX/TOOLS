@@ -1,0 +1,71 @@
+#!/bin/sh
+# get color or drawing by name and output as simple string
+
+abs_dir_path="$(dirname "$(realpath "$0")")"
+cpath="$abs_dir_path/.colors"
+dpath="$abs_dir_path/.drawings"
+[ ! -f "$cpath" ] && printf "%s: %s\n%s\n" "ERROR & EXIT" "not found file:" "$cpath" && exit 1
+[ ! -f "$dpath" ] && printf "%s: %s\n%s\n" "ERROR & EXIT" "not found file:" "$dpath" && exit 1
+
+# read into variable using 'Here Document' code block
+read -d '' USAGE <<- EOF
+Usage: $(basename $BASH_SOURCE) [OPTION...]
+OPTIONS
+    -c, --color     Get color by name
+    -d, --draw      Get drawing by name
+    -h, --help      Display help
+    -l, --list      List all/color/drawing names (takes:[ a/c/d ])
+EOF
+
+clean_content() {
+    # remove everything after // characters and empty lines with/without spaces
+    cat "$1" | sed "s/[[:space:]]*\/\/.*$//g; /^[[:space:]]*$/d"
+}
+
+get_opt() {
+    # Parse and read OPTIONS command-line options
+    SHORT=c:d:hl:
+    LONG=color:,draw:,help,list:
+    OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
+    # PLACE FOR OPTION DEFAULTS
+    eval set -- "$OPTIONS"
+    while true; do
+        case "$1" in
+        -c|--color)
+            shift
+            color="$1"
+            cc=$(clean_content "$cpath")
+            out=$(echo "$cc" | awk "/$color/"' {print $NF}') # last column
+            printf "%s" "$out"
+            ;;
+        -d|--draw)
+            shift
+            draw="$1"
+            cc=$(clean_content "$dpath")
+            echo "$cc" | grep "$draw" # TODO unfinished
+            ;;
+        -h|--help)
+            echo "$USAGE"
+            exit 0
+            ;;
+        -l|--list)
+            shift
+            ccc=$(clean_content "$cpath" | awk '{$NF=""}1') # all columns except last
+            ccd=$(clean_content "$dpath") # TODO unfinished
+            case "$1" in
+                c) echo "$ccc" ;;
+                d) echo "$ccd" ;;
+                *) echo "$ccc"; echo "$ccd" ;;
+            esac
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
+        esac
+        shift
+    done
+}
+
+get_opt "$@"
