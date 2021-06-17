@@ -22,6 +22,9 @@ if [[ $(date +%s --utc -r "$RATE_CACHE") -ge $(date +%s --utc -r "$RATE_FORM") |
     NUM=${1:-${#FULL_ARRAY[@]}}
     CRYPTO_LIST=$(echo "${FULL_ARRAY[@]}" | tr ' ' ',' | cut -d "," -f -$NUM)
     DATA=$(get_coins_data "$CRYPTO_LIST")
+    # sometimes we get lines like these:
+    # 0         +           +    0     0
+    DATA=$(echo "$DATA" | sed '/^0/d') # delete lines starting with 0
     if [ $debug -eq 0 ]; then
         echo "$DATA" > "$RATE_FORM"
         FRMT=$(column -R 3,4,5 -t "$RATE_FORM")
