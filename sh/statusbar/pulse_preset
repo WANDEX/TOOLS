@@ -19,5 +19,4 @@ case "$CURRENT_PRESET_NAME" in
     ;;
 esac >/dev/null
 
-echo "$preset"
-
+printf "%s" "$preset"
