@@ -10,5 +10,5 @@ case $BLOCK_BUTTON in
 	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 
-awk '{printf "%i%i%i\n", $1, $2, $3}' '/proc/loadavg'
+awk '{printf "%i%i%i", $1, $2, $3}' '/proc/loadavg'
 
