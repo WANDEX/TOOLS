@@ -39,7 +39,7 @@ guess_file() {
     if [ -f "$file" ]; then
         echo "$file"
     else
-        notify-send -u critical "ERROR $(basename $BASH_SOURCE)" "File not exist:\n$file\n."
+        # notify-send -u critical "ERROR $(basename $BASH_SOURCE)" "File not exist:\n$file\n."
         exit 1
     fi
 }
@@ -70,6 +70,6 @@ last_line=$(tail -n 1 "$file")
 if [[ "$last_line" == "$fold" ]]; then
     echo "$fold"
 else
-    rate_flip --exclude "p,m" "${RFOPTS[@]}"
+    rate_flip -l --exclude "p,m" "${RFOPTS[@]}"
 fi
 
