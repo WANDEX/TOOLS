@@ -12,6 +12,10 @@
 [ -z "$SINK0" ] && . "$ENVDIR/scripts/get_dflt_sink"
 [ -z "$SINK1" ] && . "$ENVDIR/scripts/get_hdmi_sink"
 
+# source even if $SINK0 & $SINK1 defined at the exec time (overrides above)
+. "$ENVDIR/scripts/get_dflt_sink"
+. "$ENVDIR/scripts/get_hdmi_sink"
+
 #pw-jack jack_control start
 #pw-jack jack_control ds alsa
 #pw-jack jack_control dps device hw:PCH
@@ -43,5 +47,5 @@ pactl set-default-source combined.monitor
 
 # volume: 32768=50%, 45875=70%, 65536=100%, 78642=120%
 pactl set-sink-volume "$SINK0" 45875
-pactl set-sink-volume "$SINK1" 65536
+pactl set-sink-volume "$SINK1" 32768
 pactl set-sink-mute "$SINK1" true # mute at boot sink N
