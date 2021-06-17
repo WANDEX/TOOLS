@@ -142,6 +142,6 @@ echo "$OUT"
 if [ -z "$message" ]; then
     printf "\n[xrdb] $TERMINAL.font: ${red}$family${end} $sn:${cyn}$size${end} style:${yel}$style${end}\n\n"
 else
-    printf "\n$message\n\n"
+    printf "$message\n"
 fi
 
