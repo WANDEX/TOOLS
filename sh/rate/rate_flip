@@ -8,26 +8,28 @@ RATE_FORM="$CSCRDIR"'/rate/rate_form'
 read -d '' USAGE <<- EOF
 Usage: $(basename $BASH_SOURCE) [OPTION...]
 OPTIONS
-    -e, --exclude   Comma separated list of the column names to exclude:
-                    'c,p,H,h,m,r' - full list of awailable column names
-    -h, --help      Display help
-    -p, --prefix    Prefix message before the data
-    -s, --slp       Sleep time between printing coin data
-    --bar           Special oneshot mode without loop, but with temp file
-    --inf           Execution in infinite loop
-    --debug         Debug mode -> echo INFO messages
+    -e, --exclude       Comma separated list of the column names to exclude:
+                        'c,p,H,h,m,r' - full list of awailable column names
+    -h, --help          Display help
+    -l, --line-number   Add to output current line number (as rating)
+    -p, --prefix        Prefix message before the data
+    -s, --slp           Sleep time between printing coin data
+    --bar               Special oneshot mode without loop, but with temp file
+    --inf               Execution in infinite loop
+    --debug             Debug mode -> echo INFO messages
 EOF
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=ac:de:hn:p:s:
-    LONG=ascending,bar,bot:,colnum:,debug,descending,exclude:,help,inf,number:,prefix:,slp:,top:
+    SHORT=ac:de:hln:p:s:
+    LONG=ascending,bar,bot:,colnum:,debug,descending,exclude:,help,line-number,inf,number:,prefix:,slp:,top:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     bar=0
     inf=0
     def_columns="c,p,H,h,m,r" # list of column names
     del_columns="p,m,r"       # list of columns to delete
+    cln=0
     num=10
     num_total=$(cat "$RATE_FORM" | wc -l)
     prefix=""
@@ -64,6 +66,9 @@ get_opt() {
             rate_sort --help | sed "s/OPTIONS/RATE_SORT OPTIONS/;
                                     /Usage:/d; /--help/d; /--debug/d;"
             exit 0
+            ;;
+        -l|--line-number)
+            cln=1
             ;;
         -n|--number)
             shift
@@ -166,7 +171,11 @@ bar() {
         exit 1
     fi
     out=$(grep "^>" "$ufile" | sed "s/^>//; s/|$//;")
-    printf "$prefix""$out"
+    if [ "$cln" -eq 1 ]; then
+        ln=$(sed -n '/^>/=' "$ufile")
+        ln=$(printf "%02d)" "$ln")
+    fi
+    printf "%s%s%s" "$prefix" "$ln" "$out"
 }
 
 term() {
@@ -177,8 +186,12 @@ term() {
     TRM="\r\033[K"
     CR=""
     while read line; do # line by line loop
+        if [ "$cln" -eq 1 ]; then
+            ln=$(echo "$MULTILINE" | sed -n "/$line/=")
+            ln=$(printf "%02d)" "$ln")
+        fi
         # delete/replace previous line and use $MAXLWIDTH string format
-        printf "%s$TRM%s%""$MAXLWIDTH"'s'"$CR" "$CENSOR" "$prefix" "$line"
+        printf "%s$TRM%s%s%""$MAXLWIDTH"'s'"$CR" "$CENSOR" "$prefix" "$ln" "$line"
         sleep $slp
     done <<< "$MULTILINE"
 }
