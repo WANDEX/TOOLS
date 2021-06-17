@@ -1,0 +1,3 @@
+#!/bin/sh
+# simply open image with solid black color that fills the entire space
+sxiv -qbp -z 1000 ~/Wallpapers/code/1_Solid_black.png
