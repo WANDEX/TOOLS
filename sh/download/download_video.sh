@@ -1,8 +1,10 @@
 #!/bin/sh
 # download via youtube-dl video playlist or single video
 
-red=$'\e[1;31m'; grn=$'\e[1;32m'; yel=$'\e[1;33m'; blu=$'\e[1;34m'; mag=$'\e[1;35m'; cyn=$'\e[1;36m'; end=$'\e[0m'
-red_i=$'\e[1;41m'; grn_i=$'\e[1;42m'; yel_i=$'\e[1;43m'; blu_i=$'\e[1;44m'; mag_i=$'\e[1;45m'; cyn_i=$'\e[1;46m'; def_i=$'\e[1;7m'
+# SOURCE GLOBALLY DEFINED TERMINAL COLOR VARIABLES
+# shellcheck disable=SC1091
+# shellcheck source=$ENVSCR/termcolors
+TC="$ENVSCR/termcolors" && [ -r "${TC}" ] && . "${TC}"
 
 # check if script started from terminal emulator
 if [ -t 0 ]; then
@@ -15,8 +17,8 @@ else
 fi
 
 # read into variable using 'Here Document' code block
-read -d '' USAGE <<- EOF
-Usage: $(basename $BASH_SOURCE) [OPTION...]
+read -r -d '' USAGE <<- EOF
+Usage: $(basename "$0") [OPTION...]
 OPTIONS
     -b, --begin         Download from playlist index (default:1)
     -e, --end           If url is playlist - how many items to download (default:1)
@@ -29,7 +31,7 @@ OPTIONS
     -u, --url           URL of video/stream
     -y, --ytdl          Any other youtube-dl native options (specify only inside "")
 EXAMPLES:
-    $(basename $BASH_SOURCE) -u "\$URL" -y "--simulate --get-duration" -y "--playlist-items 1-3"
+    $(basename "$0") -u "\$URL" -y "--simulate --get-duration" -y "--playlist-items 1-3"
 EOF
 
 get_opt() {
@@ -55,11 +57,11 @@ get_opt() {
             case $1 in
                 -1) START=1 ;;
                 0*)
-                    printf "($1)\n^ unsupported number! exit.\n"
+                    printf "(%s)\n^ unsupported number! exit.\n" "$1"
                     exit 1
                     ;;
                 ''|*[!0-9]*)
-                    printf "($1)\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    printf "(%s)\n^ IS NOT A NUMBER OF INT! exit.\n" "$1"
                     exit 1
                     ;;
                 *) START=$1 ;;
@@ -70,11 +72,11 @@ get_opt() {
             case $1 in
                 -1) END=-1 ;; # get full playlist
                 0*)
-                    printf "($1)\n^ unsupported number! exit.\n"
+                    printf "(%s)\n^ unsupported number! exit.\n" "$1"
                     exit 1
                     ;;
                 ''|*[!0-9]*)
-                    printf "($1)\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    printf "(%s)\n^ IS NOT A NUMBER OF INT! exit.\n" "$1"
                     exit 1
                     ;;
                 *) END=$1 ;;
@@ -88,7 +90,7 @@ get_opt() {
                 exit 1
             fi
             # remove everything after # character and empty lines with/without spaces
-            URLS=$(cat "$file" | sed "s/[[:space:]]*#.*$//g; /^[[:space:]]*$/d")
+            URLS=$(sed "s/[[:space:]]*#.*$//g; /^[[:space:]]*$/d" "$file")
             URLL=$(echo "$URLS" | wc -l)
             ;;
         -h|--help)
@@ -178,18 +180,18 @@ statistic() {
     case "$exit_code" in
         0)
             ok=$(echo "$ok+1" | bc)
-            printf "${cyn_i}[%s/%s]${end}\n" "$ok" "$URLL"
+            printf "${CYN_I}[%s/%s]${END}\n" "$ok" "$URLL"
         ;;
         *)
             err=$(echo "$err+1" | bc)
-            printf "${red_i}[%s(%s)]${end}\n" "ERROR:" "$exit_code"
+            printf "${RED_I}[%s(%s)]${END}\n" "ERROR:" "$exit_code"
         ;;
     esac
     sum=$(echo "$ok+$err" | bc)
-    if [ $URLL -eq $ok ]; then
-        printf "${cyn_i}[%s]${end} ${cyn}%s${end}\n" "$ok" "ALL OK, FINISHED."
-    elif [ $URLL -eq $sum ]; then
-        printf "${mag}%s ${red}[%s] ${mag}%s${end}\n" "FINISHED WITH" "$err" "ERRORS."
+    if [ "$URLL" -eq "$ok" ]; then
+        printf "${CYN_I}[%s]${END} ${CYN}%s${END}\n" "$ok" "ALL OK, FINISHED."
+    elif [ "$URLL" -eq "$sum" ]; then
+        printf "${MAG}%s ${RED}[%s] ${MAG}%s${END}\n" "FINISHED WITH" "$err" "ERRORS."
     fi
 }
 
@@ -224,7 +226,7 @@ loop_over_urls() {
                 OUTPATH=$(add_index "$findex")
             ;;
         esac
-        printf "\n${cyn}> %s${end}\n" "$url"
+        printf "\n${CYN}> %s${END}\n" "$url"
         ytdl_cmd "$url"
     done <<< "$URLS"
 }
