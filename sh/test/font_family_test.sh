@@ -1,7 +1,10 @@
 #!/bin/sh
 # print all available font family variants
 
-red=$'\e[1;31m'; grn=$'\e[1;32m'; yel=$'\e[1;33m'; blu=$'\e[1;34m'; mag=$'\e[1;35m'; cyn=$'\e[1;36m'; end=$'\e[0m'
+# SOURCE GLOBALLY DEFINED TERMINAL COLOR VARIABLES
+# shellcheck disable=SC1091
+# shellcheck source=$ENVSCR/termcolors
+TC="$ENVSCR/termcolors" && [ -r "${TC}" ] && . "${TC}"
 
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
@@ -123,7 +126,7 @@ rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
 
 while IFS= read -r font_style; do
     FONT="$font_family:""$font_typesize=""$font_size"":style=""$font_style"
-    FONTM="${red}$font_family${end}:""$font_typesize=""${cyn}$font_size${end}"":style=${yel}$font_style${end}"
+    FONTM="${RED}$font_family${END}:""$font_typesize=""${CYN}$font_size${END}"":style=${YEL}$font_style${END}"
     st -t "ffamily [$font_style]" -f "$FONT" -e any_key.sh font_test.sh --message="$FONTM" &
     sleep 0.05
 done <<< "$common_styles"
