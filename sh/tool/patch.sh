@@ -280,19 +280,19 @@ add_mark() {
 statistic() {
     exit_code="$1"
     case "$exit_code" in
-        0) ST_S=$(($ST_S + 1)); echo "${GRN_I}[OK]${END}^";;
-        1) ST_F=$(($ST_F + 1)); echo "${RED_I}[FAILED]${END}^";;
-        2) ST_E=$(($ST_E + 1)); echo "${RED_I}[ERROR]${END}^";;
+        0) ST_S=$(($ST_S + 1)); echo "${GRN_S}[OK]${END}^";;
+        1) ST_F=$(($ST_F + 1)); echo "${RED_S}[FAILED]${END}^";;
+        2) ST_E=$(($ST_E + 1)); echo "${RED_S}[ERROR]${END}^";;
     esac
     ST_TOTAL=$(($ST_TOTAL + 1))
-    [[ $ST_F -eq 0 ]] && ST_F_MSG="" || ST_F_MSG="${RED_I} FAILED:$ST_F ${END}"
-    [[ $ST_E -eq 0 ]] && ST_E_MSG="" || ST_E_MSG="${RED_I} ERROR:$ST_E ${END}"
-    [[ $ST_S -eq $ST_TOTAL ]] && ST_S_MSG="" || ST_S_MSG="${GRN_I} SUCCESS:$ST_S ${END}"
-    STATS_NUM="${CYN_I} [$ST_S/$ST_TOTAL] ${END}"
-    SSEP="${DEF_I} / ${END}"
-    [[ $STATS_N_LONG -eq 1 ]] && STATS_NUMS="$SSEP$STATS_NUM" || STATS_NUMS="$SSEP${CYN_I} $ST_TOTAL ${END}"
+    [[ $ST_F -eq 0 ]] && ST_F_MSG="" || ST_F_MSG="${RED_S} FAILED:$ST_F ${END}"
+    [[ $ST_E -eq 0 ]] && ST_E_MSG="" || ST_E_MSG="${RED_S} ERROR:$ST_E ${END}"
+    [[ $ST_S -eq $ST_TOTAL ]] && ST_S_MSG="" || ST_S_MSG="${GRN_S} SUCCESS:$ST_S ${END}"
+    STATS_NUM="${CYN_S} [$ST_S/$ST_TOTAL] ${END}"
+    SSEP="${DEF_S} / ${END}"
+    [[ $STATS_N_LONG -eq 1 ]] && STATS_NUMS="$SSEP$STATS_NUM" || STATS_NUMS="$SSEP${CYN_S} $ST_TOTAL ${END}"
     STATS_FULL="$ST_S_MSG""$ST_F_MSG""$ST_E_MSG"
-    [[ "$ST_S_MSG" == "" ]] && STATS_FULL="${GRN_I}[OK]${END}${DEF_I} ALL PATCHES ARE ${END}${GRN_I}[OK]${END}"
+    [[ "$ST_S_MSG" == "" ]] && STATS_FULL="${GRN_S}[OK]${END}${DEF_S} ALL PATCHES ARE ${END}${GRN_S}[OK]${END}"
 }
 
 patch_cmd() {
