@@ -180,16 +180,16 @@ statistic() {
     case "$exit_code" in
         0)
             ok=$(echo "$ok+1" | bc)
-            printf "${CYN_I}[%s/%s]${END}\n" "$ok" "$URLL"
+            printf "${CYN_S}[%s/%s]${END}\n" "$ok" "$URLL"
         ;;
         *)
             err=$(echo "$err+1" | bc)
-            printf "${RED_I}[%s(%s)]${END}\n" "ERROR:" "$exit_code"
+            printf "${RED_S}[%s(%s)]${END}\n" "ERROR:" "$exit_code"
         ;;
     esac
     sum=$(echo "$ok+$err" | bc)
     if [ "$URLL" -eq "$ok" ]; then
-        printf "${CYN_I}[%s]${END} ${CYN}%s${END}\n" "$ok" "ALL OK, FINISHED."
+        printf "${CYN_S}[%s]${END} ${CYN}%s${END}\n" "$ok" "ALL OK, FINISHED."
     elif [ "$URLL" -eq "$sum" ]; then
         printf "${MAG}%s ${RED}[%s] ${MAG}%s${END}\n" "FINISHED WITH" "$err" "ERRORS."
     fi
