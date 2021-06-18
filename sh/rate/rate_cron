@@ -28,6 +28,7 @@ if [[ $(date +%s --utc -r "$RATE_CACHE") -ge $(date +%s --utc -r "$RATE_FORM") |
     if [ $debug -eq 0 ]; then
         echo "$DATA" > "$RATE_FORM"
         FRMT=$(column -R 3,4,5 -t "$RATE_FORM")
+        FRMT=$(echo "$FRMT" | sed '/^0/d') # delete lines starting with 0
         echo "$FRMT" > "$RATE_FORM"
     elif [ $debug -eq 1 ]; then
         echo "$DATA"
