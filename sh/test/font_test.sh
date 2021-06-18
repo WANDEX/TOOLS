@@ -1,11 +1,18 @@
 #!/bin/sh
 # terminal font test
 
-red=$'\e[1;31m'; grn=$'\e[1;32m'; yel=$'\e[1;33m'; blu=$'\e[1;34m'; mag=$'\e[1;35m'; cyn=$'\e[1;36m'; end=$'\e[0m'
-def_b=$'\e[0;1m'; def_i=$'\e[0;3m'
-def_B=$'\e[4;1m'; def_I=$'\e[4;3m'; def_R=$'\e[4m'
+# SOURCE GLOBALLY DEFINED TERMINAL COLOR VARIABLES
+# shellcheck disable=SC1091
+# shellcheck source=$ENVSCR/termcolors
+TC="$ENVSCR/termcolors" && [ -r "${TC}" ] && . "${TC}"
 
-read -d '' BOXDC <<- EOF
+# BOLD, ITALIC, UNDERLINE
+BLD=$(printf '\e[1m')
+ITQ=$(printf '\e[3m')
+UND=$(printf '\e[4m')
+END=$(printf '\e[0m')
+
+read -r -d '' BOXDC <<- EOF
 ┌─┬─┐ ╔═╦═╗ ┏━┳━┓        ▏ ▕
 ├─┼─┤ ╠═╬═╣ ┣━╋━┫ ╭───╮ ╱╲ ╱╲
 │ │ │ ║ ║ ║ ┃ ┃ ┃ │ x │ ▏▏╳▕▕
@@ -14,13 +21,13 @@ read -d '' BOXDC <<- EOF
 EOF
 
 # U+202F   NARROW NO-BREAK SPACE -> ' '
-read -d '' TEXT <<- EOF
+read -r -d '' TEXT <<- EOF
 ABCDEFGHIJKLMNOPQRSTUVWXYZ
 abcdefghijklmnopqrstuvwxyz
 АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ
 абвгдеёжзийклмнопрстуфхцчшщъыьэюя
 0123456789 ()[]{}<> '' "" \`\`
-?!@#$%^&*№ +-=><-_+ \\\/| .,:;
+?!@#$%^&*№ +-=><-_+ \\/| .,:;
 > Almost before we knew it,
 we had left the ground.
 > Алая вспышка осветила
@@ -28,8 +35,8 @@ we had left the ground.
 EOF
 
 # read into variable using 'Here Document' code block
-read -d '' USAGE <<- EOF
-Usage: $(basename $BASH_SOURCE) [OPTION...]
+read -r -d '' USAGE <<- EOF
+Usage: $(basename "$0") [OPTION...]
 OPTIONS
 get one option specific for font of the current \$TERMINAL and exit.
 (without option simply print font test)
@@ -52,21 +59,25 @@ widths() {
 WR=$(widths "Regular"); WB=$(widths "Bold"); WI=$(widths "Italic")
 
 font_term=$(xrdb -query | grep "$TERMINAL.font:" | awk '{$1="";print $0}' | sed "s/^[ ]*//")
-font_multiline=$(echo $font_term | sed "s/:/\n/g")
+font_multiline=$(echo "$font_term" | sed "s/:/\n/g")
 
-if $(echo "$font_multiline" | grep -q "family="); then
+found() { echo "$font_multiline" | grep -q "$1"; }
+
+if  found "family="; then
     family=$(echo "$font_multiline" | sed -n "/family=/s///p")
 else
     family=$(echo "$font_multiline" | head -n 1)
 fi
-if $(echo "$font_multiline" | grep -q "pixelsize="); then
+
+if  found "pixelsize="; then
     sn="pixelsize"
     size=$(echo "$font_multiline" | sed -n "/$sn=/s///p")
 else
     sn="size"
     size=$(echo "$font_multiline" | sed -n "/$sn=/s///p")
 fi
-if $(echo "$font_multiline" | grep -q "style="); then
+
+if  found "style="; then
     style=$(echo "$font_multiline" | sed -n "/style=/s///p")
 else
     style="Regular"
@@ -83,7 +94,7 @@ get_opt() {
     while true; do
         case "$1" in
         -b|--box)
-            [[ $box -eq 1 ]] && box=0 || box=1 # toggle behavior of value
+            [ "$box" -eq 1 ] && box=0 || box=1 # toggle behavior of value
             ;;
         -f|--family)
             echo "$family"
@@ -120,7 +131,7 @@ get_opt() {
 
 get_opt "$@"
 
-tmpd="${TMPDIR:-/tmp/}$(basename $0)" && mkdir -p "$tmpd"
+tmpd="${TMPDIR:-/tmp/}$(basename "$0")" && mkdir -p "$tmpd"
 tmpf=$(mktemp "$tmpd/XXXX")
 echo "$TEXT" > "$tmpf"
 OUT=$(paste -d' ' "$tmpf" "$tmpf" "$tmpf" | awk '
@@ -130,18 +141,18 @@ OUT=$(paste -d' ' "$tmpf" "$tmpf" "$tmpf" | awk '
     }
     {
         $1 = $1;
-        $2 = "'${def_b}'" $2 "'${end}'";
-        $3 = "'${def_i}'" $3 "'${end}'";
+        $2 = "'"${BLD}"'" $2 "'"${END}"'";
+        $3 = "'"${ITQ}"'" $3 "'"${END}"'";
         print
     }
-' | column -t -o' ▏' -N "${def_R}$WR${end},${def_B}$WB${end},${def_I}$WI${end}") # replace N occurrence
+' | column -t -o' ▏' -N "${UND}$WR${END},${BLD}${UND}$WB${END},${ITQ}${UND}$WI${END}") # replace N occurrence
 rm -f "$tmpf" # delete the temporary files
 rmdir --ignore-fail-on-non-empty "$tmpd"  # delete temporary dir
 echo "$OUT"
-[[ $box -eq 1 ]] && echo "$BOXDC"
+[ "$box" -eq 1 ] && echo "$BOXDC"
 if [ -z "$message" ]; then
-    printf "\n[xrdb] $TERMINAL.font: ${red}$family${end} $sn:${cyn}$size${end} style:${yel}$style${end}\n\n"
+    printf "\n%s\n\n" "[xrdb] $TERMINAL.font: ${RED}$family${END} $sn:${CYN}$size${END} style:${YEL}$style${END}"
 else
-    printf "$message\n"
+    printf "%s\n" "$message"
 fi
 
