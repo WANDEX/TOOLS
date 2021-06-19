@@ -31,13 +31,13 @@ main() {
     # 💧todays the maximum probability of precipitation
     r1=$(echo "$weatherreport" | sed '16q;d' | grep -wo "[0-9]*%" | sort -rn | sed "s/^//g;1q" | tr -d '\n' | sed "s/;/.,/g")
     case "$r1" in
-        *0%) r1="" ;;
-        *) r1="💧$r1 " ;;
+        ''|*0%) r1="" ;;
+        *) r1=" 💧$r1 " ;;
     esac
     # temp daily low - high
     r2=$(echo "$weatherreport" | sed '13q;d' | grep -o "m\\([-+]\\)*[0-9]\\+" | sort -n -t 'm' -k 2n | sed -e 1b -e '$!d' | tr '\n|m' ' ' | awk '{print ""$1".."$2"°"}')
     # compose string & print
-    printf "%s %s%s" "$r0" "$r1" "$r2"
+    printf "%s%s%s" "$r0" "$r1" "$r2"
 }
 
 write_to_file() {
