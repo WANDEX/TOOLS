@@ -20,6 +20,18 @@ url="https://www.twitch.tv/""$twitch_channel"
 summary="🔴 $twitch_channel LIVE:"
 body="\n$url"
 
+# automatically open stream if channel name in AUTOFILE
+AUTOFILE="$CSCRDIR/dunst_twitch"
+if [ -r "$AUTOFILE" ]; then
+    if grep "$twitch_channel" "$AUTOFILE"; then
+        DST="string:x-dunst-stack-tag"
+        bg="string:bgcolor:#9147FF"
+        fg="string:fgcolor:#EFEFF1"
+        dunstify -h "$DST:hi" -h "$bg" -h "$fg" "(AUTO) mpvu:" "$twitch_channel"
+        setsid -f mpvu -u "$url"
+    fi
+fi
+
 ACTION=$(dunstify -u "$urgency" -A "default,mpvu" -A "clip,url" "$summary" "$body")
 
 case "$ACTION" in
