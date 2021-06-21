@@ -23,7 +23,7 @@ body="\n$url"
 # automatically open stream if channel name in AUTOFILE
 AUTOFILE="$CSCRDIR/dunst_twitch"
 if [ -r "$AUTOFILE" ]; then
-    if grep "$twitch_channel" "$AUTOFILE"; then
+    if grep -i "$twitch_channel" "$AUTOFILE"; then
         DST="string:x-dunst-stack-tag"
         bg="string:bgcolor:#9147FF"
         fg="string:fgcolor:#EFEFF1"
