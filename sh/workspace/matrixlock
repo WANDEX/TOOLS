@@ -1,0 +1,23 @@
+#!/bin/sh
+# specifically for using in command: 'slock "$bname"' (this script base name)
+# executes matrix shell in new spawned terminals for each monitor output
+# then kills all process-group when 'slock "$bname"' process is finished
+
+bname="$(basename "$0")" # get this script base name
+
+spawn_term() {
+    # add (.0) in title - wm should use this substring as rule to match monitor output
+    title="The-Matrix-Shell (.$1)"
+    st -f "NotoSansMono Nerd Font:pixelsize=27" -n opaque -t "$title" -e matrix -du
+}
+
+# whole command line runs in the background
+# if process exist and then finished -> killall process group | else return 1 (does nothing)
+pwait -u "$USER" -f "slock $bname" && killall -g "$bname" &
+
+nummons=$(xrandr --listactivemonitors | sed "1d" | wc -l)
+i=0
+while [ "$i" -lt "$nummons" ]; do
+    spawn_term "$i" &
+    i="$(echo "$i+1" | bc)"
+done
