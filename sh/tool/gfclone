@@ -1,0 +1,16 @@
+#!/bin/sh
+# find all .git dirs from current cwd and return composed "git clone url 'path'" lines
+
+# we ignore .dirs at first-level of our current cwd
+git_configs=$(find ./* -type f -path "*/.git/config")
+
+for line in $git_configs; do
+    url=$(sed -n "0,/^.*url = /s///p" "$line") # sed print only first result and replace
+    path=$(echo "$line" | sed "s/\.git.*$//")  # remove everything starting from .git
+    composed=$(printf "%s\n%s %-70s '%s'\n" "$composed" "git clone" "$url" "$path")
+done
+
+# remove first line, as it is always empty and format into compact table
+out=$(echo "$composed" | sed "1d" | column -to ' ')
+
+echo "$out"
