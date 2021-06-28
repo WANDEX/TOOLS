@@ -6,7 +6,7 @@ DIR="${CSCRDIR:-$XDGCHCS}/rate_hist"
 
 coin="$1"
 [ -z "$coin" ] && echo "provide coin name as \$1. exit." && exit 1
-jsonfile=$(find "$DIR" -type f -name "*$coin*" -iname "*buy*" | head -n1)
+jsonfile=$(find "$DIR" -type f -name "*$coin*" -iname "*buy*" | sort -rn | head -n1)
 [ ! -r "$jsonfile" ] && exit 1 # silently exit without outputting anything
 
 # get operation history data
