@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # show cryptocurrency price data via rate wrapper
 
 fold="[+]rate"
@@ -7,9 +7,8 @@ fold="[+]rate"
 SIG=$((34+$1))
 # $2 is a postfix after the LIST name
 POSTFIX="${2:-"_0"}"
-DELAY=0.5
 LIST="$CSCRDIR"'/rate/rate_stat_coin_list'"$POSTFIX"
-[ -f "$LIST" ] && CAT=$(cat "$LIST" | head -n 1)
+[ -f "$LIST" ] && CAT=$(head -n 1 "$LIST")
 # if file is empty use default list of coins
 COIN_LIST="${CAT:-"BTC,ETH,BCH"}"
 
@@ -19,19 +18,18 @@ mcap()  { rate -o "$COIN_LIST" -f "%c:%m"; }
 fold()  { echo "$fold"; }
 
 array=(price ch24h mcap)
-array_len=${#array[@]}
 file="$CSCRDIR"'/rate/rate_stat'"$POSTFIX"
-current_element=$(cat "$file" | tail -n 1)
-[[ -z $current_element ]] && current_element="price"
+current_element=$(tail -n 1 "$file")
+[ -z "$current_element" ] && current_element="price"
 new_elem="$current_element"
 
 next_elem() {
-    sleep $DELAY
-    for (( i=0; i<$array_len; i++ )); do
+    [ "$current_element" = "$fold" ] && new_elem="${array[0]}"
+    for i in "${!array[@]}"; do
         # find index of current element
-        if [[ "$current_element" == "${array[i]}" ]]; then
+        if [ "$current_element" = "${array[i]}" ]; then
             # if there is no next element, get first
-            if [[ -z "${array[$i+1]}" ]]; then
+            if [ -z "${array[$i+1]}" ]; then
                 new_elem="${array[0]}"
             else
                 new_elem="${array[$i+1]}"
@@ -43,12 +41,12 @@ next_elem() {
 }
 
 prev_elem() {
-    sleep $DELAY
-    for (( i=$array_len; i>=0; i-- )); do
+    [ "$current_element" = "$fold" ] && new_elem="${array[0]}"
+    for i in "${!array[@]}"; do
         # find index of current element
-        if [[ "$current_element" == "${array[i]}" ]]; then
+        if [ "$current_element" = "${array[i]}" ]; then
             # if there is no previous element, get last
-            if [[ -z "${array[$i-1]}" ]]; then
+            if [ -z "${array[$i-1]}" ]; then
                 new_elem="${array[-1]}"
             else
                 new_elem="${array[$i-1]}"
@@ -61,9 +59,11 @@ prev_elem() {
 
 fold_elem() {
     # toggle between fold/unfold
-    linesnum=$(cat "$file" | wc -l)
+    linesnum=$(< "$file" wc -l)
     if [ "$linesnum" -gt 1 ]; then
         sed -i '2,$d' "$file" # remove from second to last line
+    elif [ "$linesnum" -eq 0 ]; then
+        echo "$new_elem" > "$file"
     else
         new_elem="$fold"
         # write new element to end of a file
@@ -71,15 +71,16 @@ fold_elem() {
     fi
 }
 
+PID="$(pidof dwmblocks)"
 case $BLOCK_BUTTON in
-        1) kill -$SIG $(pidof dwmblocks) ;;
-        2) fold_elem ; kill -$SIG $(pidof dwmblocks) ;;
-        4) prev_elem ; kill -$SIG $(pidof dwmblocks) ;;
-        5) next_elem ; kill -$SIG $(pidof dwmblocks) ;;
+        1) kill -$SIG "$PID" ;;
+        2) fold_elem ; kill -$SIG "$PID" ;;
         3) notify-send "💰crypto rate status module" "\- Shows my rate wrapper output
 - MMB fold/unfold $fold
 - Scroll to change between outputs." ;;
-	6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+        4) prev_elem ; kill -$SIG "$PID" ;;
+        5) next_elem ; kill -$SIG "$PID" ;;
+        6) "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 
 # exec function based on substring
