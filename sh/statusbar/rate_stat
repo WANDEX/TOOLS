@@ -85,9 +85,26 @@ esac
 
 # exec function based on substring
 case "$new_elem" in
-    "price") price ;;
-    "ch24h") ch24h ;;
-    "mcap") mcap ;;
-    "$fold") fold ;;
+    "price") output=$(price) ;;
+    "ch24h") output=$(ch24h) ;;
+    "mcap")  output=$(mcap) ;;
+    "$fold") output=$(fold) ;;
 esac
 
+# add profits to output after each coin with existing hist data
+IFS=',' read -ra clarr <<< "$COIN_LIST"
+for coin_name in "${clarr[@]}"; do
+    pro="$(rate_prof "$coin_name")"
+    if [ -n "$pro" ]; then
+        # split into words (parts not separated by spaces)
+        for words in $output; do
+            case "$words" in
+                *"$coin_name"*)
+                    output="$(echo "$output" | sed "s/${words}/${words}\(${pro}\)/")"
+                    ;;
+            esac
+        done
+    fi
+done
+
+printf "%s" "$output"
