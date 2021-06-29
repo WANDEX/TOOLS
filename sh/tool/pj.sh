@@ -29,7 +29,11 @@ print_stats() {
 error_check() {
     errc="$1"
     text="$2"
-    if [ "$errc" -ne 0 ]; then
+    case "$text" in
+        "CREATING") e=1 ;; # diff - returns: 0 - same | 1 - different | 2 - trouble
+        *) e=0 ;;
+    esac
+    if [ "$errc" -ne "$e" ]; then
         printf "${RED_S}%s${END}\n%s\n" \
         "ERROR WHILE ${text} PATCH, EXIT." "$old_patch"
         if [ "$text" =  "APPLYING" ]; then
