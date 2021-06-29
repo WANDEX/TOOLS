@@ -57,6 +57,8 @@ for old_patch in $patch_files; do
     patch -p1 -f < "$old_patch"
     error_check "$?" "APPLYING"
 
+    make clean
+
     # create new_patch
     diff -up "$dir_for_diffs" ./ > "$new_patch"
     error_check "$?" "CREATING"
@@ -64,6 +66,8 @@ for old_patch in $patch_files; do
     # reverse with new patch (to validate that patch is working)
     patch -p1 -f -R < "$new_patch"
     error_check "$?" "REVERSING"
+
+    make clean
 done
 
 if [ "$total" -eq "$i" ]; then
