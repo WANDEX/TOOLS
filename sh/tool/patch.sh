@@ -45,7 +45,7 @@ check_existance() {
     FILE="$DIR/active_patch_list"
     if [ -f "$FILE" ]; then
         # remove everything after # character and empty lines with/without spaces
-        ORDER=$(cat "$FILE" | sed "s/[[:space:]]*#.*$//g; /^[[:space:]]*$/d")
+        ORDER=$(sed "s/[[:space:]]*#.*$//g; /^[[:space:]]*$/d" "$FILE")
         ORDER=$(echo "$ORDER" | nl -w2 -n"rn" -s"$NLS")
         N_MAX=$(echo "$ORDER" | wc -l)
     else
@@ -56,10 +56,10 @@ check_existance() {
 print_colored() {
     sed_num="s/.$//"
     sed_mrk="s/[[:digit:]]*$NLS$SEP\(.\).*$/\1/p"
-    if [[ $1 == all ]]; then
+    if [ "$1" = all ]; then
         arg="$ORDER"
-        msg="patch order:\n"
-        tmpd="${TMPDIR:-/tmp/}$(basename $0)" && mkdir -p "$tmpd"
+        msg="patch order:"
+        tmpd="${TMPDIR:-/tmp/}$(basename "$0")" && mkdir -p "$tmpd"
         tmpf_num=$(mktemp "$tmpd/XXXX")
         tmpf_mrk=$(mktemp "$tmpd/XXXX")
         tmpf_dir=$(mktemp "$tmpd/XXXX")
@@ -75,10 +75,10 @@ print_colored() {
                 OFS = "";
             }
             {
-                $1 = "'${MAG}'" $1 "'${END}'";
-                $2 = "'${RED}'" $2 "'${END}'";
-                $3 = "'${BLU}'" $3 "'${END}'";
-                $4 = "'${CYN}'" $4 "'${END}'";
+                $1 = "'"${MAG}"'" $1 "'"${END}"'";
+                $2 = "'"${RED}"'" $2 "'"${END}"'";
+                $3 = "'"${BLU}"'" $3 "'"${END}"'";
+                $4 = "'"${CYN}"'" $4 "'"${END}"'";
                 print
             }
         ' | sed 's/[ ]//3; s/[ ]//1' | column -t -o' ') # replace N occurrence
@@ -90,25 +90,24 @@ print_colored() {
             echo "ERROR: file variable is empty in function call. exit"
             exit 1
         fi
-        msg="\n"
         num=$(echo "$ORDER" | grep "$file" | awk '{print $1}' | sed "$sed_num")
         mrk=$(echo "$ORDER" | grep "$file" | awk '{print $1}' | sed -n "$sed_mrk")
-        dir=$(dirname $file)
-        bsn=$(basename $file)
+        dir=$(dirname "$file")
+        bsn=$(basename "$file")
         OUT=$(printf "%s%s %s%s" "${MAG}$num${END}" \
                                 "${RED}$mrk${END}" \
                                 "${BLU}$dir/${END}" \
                                 "${CYN}$bsn${END}")
     fi
-    [[ $solo_n ]] && msg=""
-    printf "$msg""$OUT""\n"
+    [ "$solo_n" ] && msg=""
+    printf "%s\n%s\n" "$msg" "$OUT"
 }
 
 add_patch() {
     patch_file_path="$1"
     SPACES='  '
-    printf "$SEP"N"$SPACES$patch_file_path\n" >> "$FILE"
-    echo "${YEL}$patch_file_path${END}"
+    printf "%s\n" "${SEP}N${SPACES}${patch_file_path}" >> "$FILE"
+    echo "${YEL}${patch_file_path}${END}"
     echo "patch added to the end of the active_patch_list. exit"
     exit 0
 }
@@ -145,7 +144,7 @@ get_opt() {
             shift
             ORDER=$(echo "$ORDER" | grep -i "$NLS$SEP$1")
             print_colored all
-            printf "${MAG}[${END}${RED}$1${MAG}]${END} ^ ABOVE PATCHES SELECTED BY MARK\n\n"
+            printf "%s\n\n" "${MAG}[${END}${RED}${1}${MAG}]${END} ^ ABOVE PATCHES SELECTED BY MARK"
             ;;
         -R|--reverse)
             R=(--reverse)
@@ -155,17 +154,17 @@ get_opt() {
             shift
             ORDER=$(echo "$ORDER" | grep -i "$1")
             print_colored all
-            printf "${MAG}[${END}${RED}$1${MAG}]${END} ^ ABOVE PATCHES SELECTED\n\n"
+            printf "%s\n\n" "${MAG}[${END}${RED}${1}${MAG}]${END} ^ ABOVE PATCHES SELECTED"
             ;;
         -s|--solo)
             shift
             case $1 in
                 0*)
-                    printf "$1\n^ unsupported number! exit.\n"
+                    printf "%s\n%s\n" "${1}" "^ unsupported number! exit."
                     exit 1
                     ;;
                 ''|*[!0-9]*)
-                    printf "$1\n^ IS NOT A NUMBER OF INT! exit.\n"
+                    printf "%s\n%s\n" "${1}" "^ IS NOT A NUMBER OF INT! exit."
                     exit 1
                     ;;
                 *) solo_n=$1 ;;
@@ -200,12 +199,12 @@ get_opt() {
 }
 
 non_existence_msg() {
-    if [[ $DIR_NOT_FOUND -eq 1 ]]; then
+    if [ "$DIR_NOT_FOUND" ]; then
         echo "${RED}NOT FOUND ANY PATCH DIR INSIDE CURRENT GIT ROOT DIR:${END}"
         echo "${YEL}$GITRDIR${END}"
         echo "Do not forget to ${CYN}cd${END} inside ${CYN}git${END} project, with ${CYN}patch/patches dir${END}. exit."
         exit 1
-    elif [[ $FILE_NOT_FOUND -eq 1 ]]; then
+    elif [ "$FILE_NOT_FOUND" ]; then
         echo "${YEL}$FILE${END}"
         echo "${RED}FILE DOES NOT EXIST!${END} exit."
         exit 1
@@ -251,10 +250,10 @@ reverse_order() {
 }
 
 validate() {
-    if [[ $YES -eq 0 ]]; then
-        [[ $solo_n ]] && SA="ONLY this patch?" || SA="this patch?"
+    if [ "$YES" -eq 0 ]; then
+        [ "$solo_n" ] && SA="ONLY this patch?" || SA="this patch?"
         Q="$RA $SA [y/n] "
-        if [[ $INSIDE_READ_LINE_LOOP -eq 1 ]]; then
+        if [[ "$INSIDE_READ_LINE_LOOP" -eq 1 ]]; then
             read -p "$Q" -n 1 -r <&$IN
         else
             read -p "$Q" -n 1 -r
@@ -262,7 +261,7 @@ validate() {
         echo "" # move to a new line
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             # handle exits from shell or function but don't exit interactive shell
-            [[ "$0" = "$BASH_SOURCE" ]] && exit 0 || return 1
+            [ "$0" = "$BASH_SOURCE" ] && exit 0 || return 1
         fi
     fi
 }
@@ -284,12 +283,12 @@ add_mark() {
     patch_file_path="$1"
     mark="$2"
     lnum=$(get_line_num "$patch_file_path")
-    if [[ "$mark" == F ]]; then
+    if [ "$mark" = F ]; then
         printf "${BLU}Patch contained${END} ${RED}FAILED Hunk${END}"
         printf "${BLU} and marked as:${END}${RED}F${END}\n"
     fi
-    [[ ! $dry ]] && sed -i $lnum"s/^$SEP./$SEP$mark/" "$FILE" &&
-    [[ $debug -eq 1 ]] && echo "mark:${RED}$mark${END} SET!"
+    [ ! "$dry" ] && sed -i $lnum"s/^$SEP./$SEP$mark/" "$FILE" &&
+    [ "$debug" -eq 1 ] && echo "mark:${RED}$mark${END} SET!"
 }
 
 statistic() {
@@ -300,14 +299,14 @@ statistic() {
         2) ST_E=$(($ST_E + 1)); echo "${RED_S}[ERROR]${END}^";;
     esac
     ST_TOTAL=$(($ST_TOTAL + 1))
-    [[ $ST_F -eq 0 ]] && ST_F_MSG="" || ST_F_MSG="${RED_S} FAILED:$ST_F ${END}"
-    [[ $ST_E -eq 0 ]] && ST_E_MSG="" || ST_E_MSG="${RED_S} ERROR:$ST_E ${END}"
-    [[ $ST_S -eq $ST_TOTAL ]] && ST_S_MSG="" || ST_S_MSG="${GRN_S} SUCCESS:$ST_S ${END}"
+    [ "$ST_F" -eq 0 ] && ST_F_MSG="" || ST_F_MSG="${RED_S} FAILED:$ST_F ${END}"
+    [ "$ST_E" -eq 0 ] && ST_E_MSG="" || ST_E_MSG="${RED_S} ERROR:$ST_E ${END}"
+    [ "$ST_S" -eq "$ST_TOTAL" ] && ST_S_MSG="" || ST_S_MSG="${GRN_S} SUCCESS:$ST_S ${END}"
     STATS_NUM="${CYN_S} [$ST_S/$ST_TOTAL] ${END}"
     SSEP="${DEF_S} / ${END}"
-    [[ $STATS_N_LONG -eq 1 ]] && STATS_NUMS="$SSEP$STATS_NUM" || STATS_NUMS="$SSEP${CYN_S} $ST_TOTAL ${END}"
+    [ "$STATS_N_LONG" -eq 1 ] && STATS_NUMS="$SSEP$STATS_NUM" || STATS_NUMS="$SSEP${CYN_S} $ST_TOTAL ${END}"
     STATS_FULL="$ST_S_MSG""$ST_F_MSG""$ST_E_MSG"
-    [[ "$ST_S_MSG" == "" ]] && STATS_FULL="${GRN_S}[OK]${END}${DEF_S} ALL PATCHES ARE ${END}${GRN_S}[OK]${END}"
+    [ "$ST_S_MSG" = "" ] && STATS_FULL="${GRN_S}[OK]${END}${DEF_S} ALL PATCHES ARE ${END}${GRN_S}[OK]${END}"
 }
 
 patch_cmd() {
@@ -335,7 +334,7 @@ cmmnd() {
     fi
     # discard first column & trim leading spaces
     file=$(echo "$GREP" | awk '{$1="";print $0}' | sed "s/^[ ]*//")
-    if [[ ! $R ]]; then # if -R option not explicitly specified
+    if [ ! "$R" ]; then # if -R option not explicitly specified
         # automatic toggle behavior of patch -R (reverse/apply) option
         case "$(get_patch_mark "$file")" in
             A) R=(--reverse); M="R"; RA="Reverse";;
@@ -343,10 +342,10 @@ cmmnd() {
             R) R=(); M="A"; RA="Apply";;
             F)
                 printf "\nPreviously this patch introduced ${RED}FAILED Hunks!${END}\n"
-                [[ $make_clean -eq 1 ]] && make clean && printf "${CYN}make clean [finished]${END}\n"
+                [ "$make_clean" -eq 1 ] && make clean && printf "%s\n" "${CYN}make clean [finished]${END}"
                 print_colored "$file"
                 while true; do
-                    if [[ $INSIDE_READ_LINE_LOOP -eq 1 ]]; then
+                    if [ "$INSIDE_READ_LINE_LOOP" -eq 1 ]; then
                         read -p "Apply/Reverse this patch? [a/r] " -n 1 -r <&$IN
                     else
                         read -p "Apply/Reverse this patch? [a/r] " -n 1 -r
@@ -368,15 +367,15 @@ cmmnd() {
         esac
     fi
     print_colored "$file"
-    [[ $debug -eq 1 ]] && echo "${MAG}file found by:$ET${END}"
+    [ "$debug" -eq 1 ] && echo "${MAG}file found by:$ET${END}"
 }
 
 main() {
     check_existance
     get_opt "$@"
     non_existence_msg
-    if [[ $solo_n ]]; then # if variable defined
-        cmmnd $solo_n
+    if [ "$solo_n" ]; then # if variable defined
+        cmmnd "$solo_n"
         validate
         patch_cmd "$file"
     else
@@ -391,8 +390,8 @@ main() {
             patch_cmd "$file"
         done <<< "$ORDER"
         echo ""
-        [[ $STATS_FULL_ON -eq 1 ]] && printf "$STATS_FULL"
-        [[ $STATS_NUMS_ON -eq 1 ]] && printf "$STATS_NUMS\n"
+        [ "$STATS_FULL_ON" -eq 1 ] && printf "%s" "$STATS_FULL"
+        [ "$STATS_NUMS_ON" -eq 1 ] && printf "%s\n" "$STATS_NUMS"
     fi
 }
 
