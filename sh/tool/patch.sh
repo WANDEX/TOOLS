@@ -25,6 +25,7 @@ OPTIONS
                     '-s N', by default it is assumed that this patch is not applied!
                     first usage - apply patch, second - reverse patch, and so forth.
     -y, --yes       Always assume that the answer is yes before each patch command
+    -Y, --auto      Auto mode without interactive questions and prompts.
     --dry-run       Print the results of applying the patches without actually
                     changing any files.
                     ${RED}(each patch file independently, not a cascade of changes)${END}
@@ -114,13 +115,14 @@ add_patch() {
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=a:hlm:RS:s:y
-    LONG=add:,help,list,mark:,reverse,select:,solo:,yes,dry-run,init
+    SHORT=a:hlm:RS:s:yY
+    LONG=add:,help,list,mark:,reverse,select:,solo:,yes,auto,dry-run,init
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     make_clean=1
     debug=0
     YES=0
+    AUTO=0
     STATS_FULL_ON=1
     STATS_NUMS_ON=1
     STATS_N_LONG=1
@@ -176,6 +178,9 @@ get_opt() {
         -y|--yes)
             YES=1
             ;;
+        -Y|--auto)
+            AUTO=1
+            ;;
         --dry-run)
             dry=(--dry-run)
             ;;
@@ -208,19 +213,29 @@ non_existence_msg() {
 }
 
 reverse_order() {
-    Q="Reverse Order of Patches? ${YEL}(from last to first)${END} [y/n] "
-    while true; do
-        read -p "$Q" -n 1 -r
-        case "$REPLY" in
-            [Yy]*) ORDER=$(echo "$ORDER" | tac); break;;
-            [Nn]*) break;;
-            *) echo "${RED}I don't get it.${END}";;
+    if [ "$AUTO" -eq 1 ]; then
+        # automatically guess Order of Patches Normal/Reverse by the last patch file only!
+        # discard first column & trim leading spaces
+        _f=$(echo "$ORDER" | tail -n1 | awk '{$1="";print $0}' | sed "s/^[ ]*//")
+        case "$(get_patch_mark "$_f")" in
+            A) ORDER="$(echo "$ORDER" | tac)" ;;
         esac
-    done
+    else
+        Q="Reverse Order of Patches? ${YEL}(from last to first)${END} [y/n] "
+        while true; do
+            read -p "$Q" -n 1 -r
+            case "$REPLY" in
+                [Yy]*) ORDER=$(echo "$ORDER" | tac); break;;
+                [Nn]*) break;;
+                *) echo "${RED}I don't get it.${END}";;
+            esac
+        done
+    fi
     printf "\nFollowing order will be used, "
     print_colored all
     echo ""
-    if [[ $YES -eq 1 ]]; then
+    [ "$AUTO" -eq 1 ] && return # skip following interactive confirmation
+    if [ "$YES" -eq 1 ]; then
         echo "After confirmation, ${YEL}all patches will be applied/reversed at once!${END}"
         echo "${CYN}Based on${END} previous individual patch history ${RED}mark${END}."
         Q="Proceed? [y/n] "
