@@ -37,8 +37,13 @@ else
 fi
 
 if [ "$(pamixer --sink "$SINK" --get-mute)" = "true" ]; then
+    if [ "$S2D" ]; then
+        red="$(s2d -c red)"
+        vol="^c${red}^${mute}^d^"
+    else
+        vol="$mute"
+    fi
     icon="🔇"
-    vol="$mute"
     space=''
 elif [ "$vol" -gt "70" ]; then
     icon="🔊"
