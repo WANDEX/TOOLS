@@ -1,0 +1,20 @@
+#!/bin/sh
+# show current: title - artist
+# written by dunst_web_scrobbler.sh
+# info in statusbar
+
+CSCRDIR="${CSCRDIR:-"$HOME/.cache/cscripts"}"
+
+BN="$(basename "$0")"
+DIR="$CSCRDIR/bar"
+[ ! -d "$DIR" ] && mkdir -p "$DIR"
+FILE="$DIR/$BN"
+[ -r "$FILE" ] && DATA="$(cat "$FILE")"
+
+case $BLOCK_BUTTON in
+    1) echo "" > "$FILE" ;;  # left click -> clean
+esac
+
+if [ -n "$DATA" ]; then
+    printf " %s" "$DATA"
+fi
