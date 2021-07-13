@@ -15,6 +15,8 @@ OPTIONS
     -d, --draw      Get drawing by name
     -h, --help      Display help
     -l, --list      List all/color/drawing names (takes:[ a/c/d ])
+    -p, --prefix    Add prefix string to output
+    -P, --postfix   Add postfix string to output
 EOF
 
 clean_content() {
@@ -24,8 +26,8 @@ clean_content() {
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=c:d:hl:
-    LONG=color:,draw:,help,list:
+    SHORT=c:d:hl:p:P:
+    LONG=color:,draw:,help,list:,prefix:,postfix:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     eval set -- "$OPTIONS"
@@ -35,14 +37,13 @@ get_opt() {
             shift
             color="$1"
             cc=$(clean_content "$cpath")
-            out=$(echo "$cc" | awk "/$color/"' {print $NF}') # last column
-            printf "%s" "$out"
+            out_c=$(echo "$cc" | awk "/$color/"' {print $NF}') # last column
             ;;
         -d|--draw)
             shift
             draw="$1"
             cc=$(clean_content "$dpath")
-            echo "$cc" | grep "$draw" # TODO unfinished
+            out_d=$(echo "$cc" | grep "$draw") # TODO unfinished
             ;;
         -h|--help)
             echo "$USAGE"
@@ -59,6 +60,14 @@ get_opt() {
             esac
             exit 0
             ;;
+        -p|--prefix)
+            shift
+            out_p="$1"
+            ;;
+        -P|--postfix)
+            shift
+            out_P="$1"
+            ;;
         --)
             shift
             break
@@ -69,3 +78,9 @@ get_opt() {
 }
 
 get_opt "$@"
+
+# intentionally print all in one line
+printf "%s" "$out_p"
+printf "%s" "$out_c"
+printf "%s" "$out_d"
+printf "%s" "$out_P"
