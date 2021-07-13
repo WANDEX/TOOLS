@@ -19,17 +19,17 @@ case "$COLNUM" in
     4) PREFIX='01';;
     5) PREFIX='M';;
     6) PREFIX='R';;
-    *) echo "there is no such column with number:$colnum exit." && exit 1;;
+    *) echo "there is no such column with number:$COLNUM exit." && exit 1;;
 esac
 
 # common options for rate_flip & rate_sort
-OPTS=("$AD" -c $COLNUM -n 10)
-RFOPTS=(${OPTS[@]} --bar --prefix "$UD""$PREFIX:")
+OPTS=("$AD" -c "$COLNUM" -n 10)
+RFOPTS=(${OPTS[@]} -l --exclude "p,m" --bar --prefix "$UD""$PREFIX:")
 fold="[+]rt($PREFIX)$UD"
 
 notify() {
     DATA=$(rate_sort "${OPTS[@]}")
-    notify-send -u low "$(basename $BASH_SOURCE) $ORDER" "\n$DATA\n."
+    notify-send -u low "$(basename "$0") $ORDER" "\n$DATA\n."
 }
 
 guess_file() {
@@ -48,7 +48,7 @@ fold_elem() {
     file=$(guess_file)
     last_line=$(tail -n 1 "$file")
     # toggle between fold/unfold
-    if [[ "$last_line" == "$fold" ]]; then
+    if [ "$last_line" = "$fold" ]; then
         sed -i '$d' "$file" # remove last line
     else
         # write to end of a file
@@ -56,10 +56,11 @@ fold_elem() {
     fi
 }
 
+PID="$(pidof dwmblocks)"
 case $BLOCK_BUTTON in
     1) notify ;;
-    2) fold_elem ; kill -$SIG $(pidof dwmblocks) ;;
-    3) notify-send "$(basename $BASH_SOURCE)" "Show rate data for top coins ($ORDER)
+    2) fold_elem ; kill -$SIG "$PID" ;;
+    3) notify-send "$(basename "$0")" "Show rate data for top coins ($ORDER)
 - Left click to show rate_sort data
 - MMB fold/unfold $fold $ORDER" ;;
     6) "$TERMINAL" -e "$EDITOR" "$0" ;;
@@ -67,9 +68,9 @@ esac
 
 file=$(guess_file)
 last_line=$(tail -n 1 "$file")
-if [[ "$last_line" == "$fold" ]]; then
+if [ "$last_line" = "$fold" ]; then
     echo "$fold"
 else
-    rate_flip -l --exclude "p,m" "${RFOPTS[@]}"
+    rate_flip "${RFOPTS[@]}"
 fi
 
