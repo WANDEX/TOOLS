@@ -9,14 +9,35 @@ dpath="$abs_dir_path/.drawings"
 
 # read into variable using 'Here Document' code block
 read -d '' USAGE <<- EOF
-Usage: $(basename $BASH_SOURCE) [OPTION...]
+Usage: $(basename "$0") [OPTION...]
 OPTIONS
     -c, --color     Get color by name
     -d, --draw      Get drawing by name
     -h, --help      Display help
+    -H, --memo      Display S2D MEMO
     -l, --list      List all/color/drawing names (takes:[ a/c/d ])
     -p, --prefix    Add prefix string to output
     -P, --postfix   Add postfix string to output
+EOF
+
+# read into variable using 'Here Document' code block
+read -d '' S2D_MEMO <<- EOF
+${BLD}S2D MEMO:${END}
+^rx,y,w,h^  Draw a rectangle of width w and height h,
+            with its top left corner at (x,y) relative the X drawing cursor.
+^c#FF0000^  Set foreground color.
+^b#55cdfc^  Set background color, only applies to text,
+            use the ^r^ command to change the background while drawing.
+^f<px>^     Forward the X drawing cursor by <px> pixel.
+            Please bear in mind that you have to move the cursor enough
+            to display your drawing (by the with of your drawing).
+^d^         Reset colors to SchemeNorm.
+^C<num>^    Set foreground color to terminal color 0-15.
+^B<num>^    Set background color to terminal color 0-15.
+^w^         Swaps the current foreground/background colors.
+            Useful when drawing multiple rectangles on top of one another.
+^v^         Save current color scheme to restore it later with the ^t^ tag.
+^t^         Restores the last color scheme saved by the ^v^ tag.
 EOF
 
 clean_content() {
@@ -26,8 +47,8 @@ clean_content() {
 
 get_opt() {
     # Parse and read OPTIONS command-line options
-    SHORT=c:d:hl:p:P:
-    LONG=color:,draw:,help,list:,prefix:,postfix:
+    SHORT=c:d:hHl:p:P:
+    LONG=color:,draw:,help,list:,memo,prefix:,postfix:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     eval set -- "$OPTIONS"
@@ -47,6 +68,10 @@ get_opt() {
             ;;
         -h|--help)
             echo "$USAGE"
+            exit 0
+            ;;
+        -H|--memo)
+            echo "$S2D_MEMO"
             exit 0
             ;;
         -l|--list)
