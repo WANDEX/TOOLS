@@ -27,9 +27,9 @@ OPTS=("$AD" -c "$COLNUM" -n 10)
 RFOPTS=(${OPTS[@]} -l --exclude "p,m" --bar --prefix "$UD""$PREFIX:")
 fold="[+]rt($PREFIX)$UD"
 
-notify() {
+show_report() {
     DATA=$(rate_sort "${OPTS[@]}")
-    notify-send -u low "$(basename "$0") $ORDER" "\n$DATA\n."
+    notify-send -u low "$(basename "$0") $ORDER" "\n$DATA\n"
 }
 
 guess_file() {
@@ -39,7 +39,6 @@ guess_file() {
     if [ -f "$file" ]; then
         echo "$file"
     else
-        # notify-send -u critical "ERROR $(basename $BASH_SOURCE)" "File not exist:\n$file\n."
         exit 1
     fi
 }
@@ -54,12 +53,14 @@ fold_elem() {
         # write to end of a file
         echo "$fold" >> "$file"
     fi
+    PID="$(pidof dwmblocks)"
+    kill -$SIG "$PID" # refresh
 }
 
-PID="$(pidof dwmblocks)"
+
 case $BLOCK_BUTTON in
-    1) notify ;;
-    2) fold_elem ; kill -$SIG "$PID" ;;
+    1) show_report ;;
+    2) fold_elem ;;
     3) notify-send "$(basename "$0")" "Show rate data for top coins ($ORDER)
 - Left click to show rate_sort data
 - MMB fold/unfold $fold $ORDER" ;;
