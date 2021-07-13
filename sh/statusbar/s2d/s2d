@@ -8,7 +8,7 @@ dpath="$abs_dir_path/.drawings"
 [ ! -f "$dpath" ] && printf "%s: %s\n%s\n" "ERROR & EXIT" "not found file:" "$dpath" && exit 1
 
 # read into variable using 'Here Document' code block
-read -d '' USAGE <<- EOF
+read -r -d '' USAGE <<- EOF
 Usage: $(basename "$0") [OPTION...]
 OPTIONS
     -c, --color     Get color by name
@@ -21,7 +21,7 @@ OPTIONS
 EOF
 
 # read into variable using 'Here Document' code block
-read -d '' S2D_MEMO <<- EOF
+read -r -d '' S2D_MEMO <<- EOF
 ${BLD}S2D MEMO:${END}
 ^rx,y,w,h^  Draw a rectangle of width w and height h,
             with its top left corner at (x,y) relative the X drawing cursor.
@@ -42,7 +42,7 @@ EOF
 
 clean_content() {
     # remove everything after // characters and empty lines with/without spaces
-    cat "$1" | sed "s/[[:space:]]*\/\/.*$//g; /^[[:space:]]*$/d"
+    sed "s/[[:space:]]*\/\/.*$//g; /^[[:space:]]*$/d" "$1"
 }
 
 get_opt() {
