@@ -18,6 +18,7 @@ OPTIONS
     -l, --list      List all/color/drawing names (takes:[ a/c/d ])
     -p, --prefix    Add prefix string to output
     -P, --postfix   Add postfix string to output
+    --battery       Dynamic battery drawing
 EOF
 
 # read into variable using 'Here Document' code block
@@ -48,7 +49,7 @@ clean_content() {
 get_opt() {
     # Parse and read OPTIONS command-line options
     SHORT=c:d:hHl:p:P:
-    LONG=color:,draw:,help,list:,memo,prefix:,postfix:
+    LONG=color:,draw:,help,list:,memo,prefix:,postfix:,battery:
     OPTIONS=$(getopt --options $SHORT --long $LONG --name "$0" -- "$@")
     # PLACE FOR OPTION DEFAULTS
     eval set -- "$OPTIONS"
@@ -92,6 +93,69 @@ get_opt() {
         -P|--postfix)
             shift
             out_P="$1"
+            ;;
+        --battery)
+            shift
+            battery_level="$1" # XXX temporary from $1
+            # TODO get actual battery level without $1
+            monochrome=0
+            use_term_colors=1
+            if [ "$monochrome" -eq 0 ]; then
+                if [ "$use_term_colors" -eq 1 ]; then
+                    # use terminal colors
+                    c1="C1" # red
+                    c2="C2" # green
+                    c3="C3" # yellow
+                    c4="C4" # blue
+                else
+                    # use predefined colors
+                    c1="$(s2d -p 'c' -c red)"    # red
+                    c2="$(s2d -p 'c' -c green)"  # green
+                    c3="$(s2d -p 'c' -c yellow)" # yellow
+                    c4="$(s2d -p 'c' -c blue)"   # blue
+                fi
+            fi
+            # divide battery level by 5 to get 20 battery drawing states
+            level="$(echo "$battery_level/5" | bc)"
+            # based on value of battery level variable:
+            # - dynamic x,w to animate battery level drain
+            # - dynamic remaining capacity fill color
+            case "$level" in
+                20) x=3  ; w=20 ; col_c="$c2" ;; # (100%)
+                19) x=4  ; w=19 ; col_c="$c2" ;;
+                18) x=5  ; w=18 ; col_c="$c2" ;;
+                17) x=6  ; w=17 ; col_c="$c2" ;;
+                16) x=7  ; w=16 ; col_c="$c2" ;;
+                15) x=8  ; w=15 ; col_c="$c4" ;; # ( 75%)
+                14) x=9  ; w=14 ; col_c="$c4" ;;
+                13) x=10 ; w=13 ; col_c="$c4" ;;
+                12) x=11 ; w=12 ; col_c="$c4" ;;
+                11) x=12 ; w=11 ; col_c="$c4" ;;
+                10) x=13 ; w=10 ; col_c="$c3" ;; # ( 50%)
+                9)  x=14 ; w=9  ; col_c="$c3" ;;
+                8)  x=15 ; w=8  ; col_c="$c3" ;;
+                7)  x=16 ; w=7  ; col_c="$c3" ;;
+                6)  x=17 ; w=6  ; col_c="$c3" ;;
+                5)  x=18 ; w=5  ; col_c="$c1" ;; # ( 25%)
+                4)  x=19 ; w=4  ; col_c="$c1" ;;
+                3)  x=20 ; w=3  ; col_c="$c1" ;;
+                2)  x=21 ; w=2  ; col_c="$c1" ;;
+                1)  x=22 ; w=1  ; col_c="$c1" ;;
+                0)  x=23 ; w=0  ; col_c="$c1" ;; # ( 0% )
+                *)  exit 0 ;; # exit
+            esac
+            CC="${col_c:-"c#97A6AA"}" # color capacity
+            CF="c${out_c:-"#000000"}" # color fill
+            nose="^r00,06,02,04^" # Draw the nose
+            batt="^r02,03,22,10^" # Draw the battery
+            fill="^${CF}^^r03,04,20,08^" # Fill it so that the border stays
+            cpct="^${CC}^^r$x,04,$w,08^" # Fill it with the remaining capacity
+            reset="^d^^f24^" # Reset the colorscheme and forward the cursor
+            # compose it all together
+            composed="$(printf "%s%s%s%s%s" "$nose" "$batt" "$fill" "$cpct" "$reset")"
+            # xsetroot -name "$composed" # XXX FOR TESTS ONLY!
+            printf "%s" "$composed"
+            exit 0
             ;;
         --)
             shift
