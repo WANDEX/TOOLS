@@ -3,22 +3,38 @@
 # with status2d background/foreground colors are flipped between updates
 
 ST="Straighten your back, keep your posture!"
-text="${1:-$ST}"
+text="${1:-"$ST"}"
 N="${2:-0}"
-FILE="$CSCRDIR/stext"
+FILE="$CSCRDIR/bar/stext"
 
+refresh() { kill -67 "$(pidof dwmblocks)" ; } # (hardcoded SIG)
+
+# FIXME from where does the '!' symbol come from?
+# (in dwmblocks statusbar just before printed output)
 main() {
     sec=$(date +%S)
     isdivisible=$(echo "$sec % 2" | bc) # 0 -> divisible by 2
-    [ $isdivisible -eq 0 ] && inv="^w^"
+    [ "$isdivisible" -eq 0 ] && inv="^w^" || inv=""
     if [ -r "$FILE" ] && [ "$text" = "$ST" ]; then
-        text=$(head -qzn1 "$FILE")
+        text=$(head -qn1 "$FILE")
     fi
     # repeat space character N times
-    [ "$N" -ne 0 ] && spaces=$(printf ' %.0s' $(seq 1 "$N"))
-    printf "%s %s %s%s" "^v^$inv^w^" "$text" "^t^" "$spaces"
+    [ "$N" -ne 0 ] && spaces=$(printf ' %.0s' $(seq 1 "$N")) || spaces=""
+    if [ "$S2D" ]; then
+        w="^w^$inv"
+        d="^d^"
+    else
+        w=""
+        d=""
+    fi
+    printf "%s %s %s%s" "$w" "$text" "$d" "$spaces"
 }
 
-sleep 1
-main
+case $BLOCK_BUTTON in
+    1) refresh ;; # left-click -> refresh
+    3) notify-send "stext" "print simple statusbar text" ;; # FIXME do not work
+    6) "$TERMINAL" -e "$EDITOR" "$0" ;;
+    *) sleep 1 ;; # sleep 1 sec to manipulate "$sec" variable
+esac
 
+main
